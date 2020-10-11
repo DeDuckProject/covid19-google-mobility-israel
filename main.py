@@ -15,11 +15,11 @@ days = mdates.DayLocator() # every day
 ssl._create_default_https_context = ssl._create_unverified_context
 
 #get new data from google - comment this out to disable downloading every time
-googleMobilityCsv = pd.read_csv('https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv')
-googleMobilityCsv.to_pickle('Global_Mobility_Report.pkl')
+# googleMobilityCsv = pd.read_csv('https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv')
+# googleMobilityCsv.to_pickle('Global_Mobility_Report.pkl')
 
 #load downloaded csv from local cache - un-comment this to use the already downloaded data
-# googleMobilityCsv= pd.read_pickle('Global_Mobility_Report.pkl')
+googleMobilityCsv = pd.read_pickle('Global_Mobility_Report.pkl')
 
 #filter data:
 isIsrael = googleMobilityCsv['country_region_code']=='IL' # filter only israel
@@ -36,19 +36,32 @@ subRegions2 = np.delete(subRegions2, [0])
 # Filter out weekends:
 israelDataCsv['date'] = pd.to_datetime(israelDataCsv['date'])
 israelDataCsv['day_of_week'] = israelDataCsv['date'].dt.dayofweek
-isBDay = israelDataCsv['day_of_week'] > 5
-israelDataCsv = israelDataCsv[isBDay]
+notSaturday = israelDataCsv['day_of_week'] != 5 # Remove sat
+notFriday = israelDataCsv['day_of_week'] != 4 # Remove fri
+israelDataCsv = israelDataCsv[notFriday & notSaturday]
 
 # filter From date if needed
 # dateFilter = israelDataCsv['date'] > '2020-08-15'
 # israelDataCsv = israelDataCsv[dateFilter]
 
+# category:   0         1          2        3          4            5
 categories = ['retail', 'grocery', 'parks', 'transit', 'workplace', 'residential']
-
 # set category to plot here:
-category = 'residential'
+category = categories[5]
 
 fig, ax = plt.subplots()
+# ax.xaxis.set_major_locator(months)
+# ax.xaxis.set_minor_locator(days)
+ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+
+# Plot country avg:
+isNoSubRegion1 = israelDataCsv['sub_region_1']!=israelDataCsv['sub_region_1'] # filter only israel non-region data
+countryData = israelDataCsv[isNoSubRegion1]
+x = countryData.date
+y = countryData[category]
+# rolling average:
+rolling_mean = y.rolling(window=3).mean()
+ax.plot(x, rolling_mean, 'k--', label='Israel average', linewidth=1)
 
 for subRegion in subRegions1:
     isRegion = israelDataCsv['sub_region_1']==subRegion
@@ -57,11 +70,10 @@ for subRegion in subRegions1:
     onlyRegion = onlyRegion[isNoSubRegion2]
     x = onlyRegion.date
     y = onlyRegion[category]
-    # plt.plot(x, y, label=subRegion, linewidth=0.5)
-    # ax.xaxis.set_major_locator(months)
-    # ax.xaxis.set_minor_locator(days)
-    ax.yaxis.set_major_formatter(mtick.PercentFormatter())
-    ax.plot(x, y, label=subRegion, linewidth=1)
+
+    # rolling average:
+    rolling_mean = y.rolling(window=3).mean()
+    ax.plot(x, rolling_mean, label=subRegion, linewidth=1)
 
 # for subRegion in subRegions2:
 #     isRegion = israelDataCsv['sub_region_2']==subRegion
