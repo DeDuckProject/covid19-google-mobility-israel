@@ -47,7 +47,7 @@ israelDataCsv = israelDataCsv[notFriday & notSaturday]
 # category:   0         1          2        3          4            5
 categories = ['retail', 'grocery', 'parks', 'transit', 'workplace', 'residential']
 # set category to plot here:
-category = categories[5]
+category = categories[2]
 
 fig, ax = plt.subplots()
 # ax.xaxis.set_major_locator(months)
@@ -62,6 +62,10 @@ y = countryData[category]
 # rolling average:
 rolling_mean = y.rolling(window=3).mean()
 ax.plot(x, rolling_mean, 'k--', label='Israel average', linewidth=1)
+
+# Annotate - needs to be adjusted for each plot
+# ax.annotate('school opens', xy=('2020-09-01', -20), xytext=('2020-08-20', -50), arrowprops=dict(arrowstyle="->", facecolor='black'))
+# ax.annotate('lockdown 2', xy=('2020-09-18', -20), xytext=('2020-09-01', -60), arrowprops=dict(arrowstyle="->", facecolor='black'))
 
 for subRegion in subRegions1:
     isRegion = israelDataCsv['sub_region_1']==subRegion
