@@ -46,51 +46,85 @@ israelDataCsv = israelDataCsv[notFriday & notSaturday]
 
 # category:   0         1          2        3          4            5
 categories = ['retail', 'grocery', 'parks', 'transit', 'workplace', 'residential']
-# set category to plot here:
-category = categories[2]
+
+rollingMeanWindowSize = 3
 
 fig, ax = plt.subplots()
 # ax.xaxis.set_major_locator(months)
 # ax.xaxis.set_minor_locator(days)
 ax.yaxis.set_major_formatter(mtick.PercentFormatter())
 
-# Plot country avg:
-isNoSubRegion1 = israelDataCsv['sub_region_1']!=israelDataCsv['sub_region_1'] # filter only israel non-region data
-countryData = israelDataCsv[isNoSubRegion1]
-x = countryData.date
-y = countryData[category]
-# rolling average:
-rolling_mean = y.rolling(window=3).mean()
-ax.plot(x, rolling_mean, 'k--', label='Israel average', linewidth=1)
-
-# Annotate - needs to be adjusted for each plot
-# ax.annotate('school opens', xy=('2020-09-01', -20), xytext=('2020-08-20', -50), arrowprops=dict(arrowstyle="->", facecolor='black'))
-# ax.annotate('lockdown 2', xy=('2020-09-18', -20), xytext=('2020-09-01', -60), arrowprops=dict(arrowstyle="->", facecolor='black'))
-
-for subRegion in subRegions1:
-    isRegion = israelDataCsv['sub_region_1']==subRegion
-    onlyRegion = israelDataCsv[isRegion]
-    isNoSubRegion2 = israelDataCsv['sub_region_2']!=israelDataCsv['sub_region_2'] # remove rows with sub_region_2
-    onlyRegion = onlyRegion[isNoSubRegion2]
-    x = onlyRegion.date
-    y = onlyRegion[category]
-
+def plotByRegions(category, cities):
+    # Plot country avg:
+    isNoSubRegion1 = israelDataCsv['sub_region_1']!=israelDataCsv['sub_region_1'] # filter only israel non-region data
+    countryData = israelDataCsv[isNoSubRegion1]
+    x = countryData.date
+    y = countryData[category]
     # rolling average:
-    rolling_mean = y.rolling(window=3).mean()
-    ax.plot(x, rolling_mean, label=subRegion, linewidth=1)
+    y = y.rolling(window=rollingMeanWindowSize).mean()
+    ax.plot(x, y, 'k--', label='Israel average', linewidth=1)
 
-# for subRegion in subRegions2:
-#     isRegion = israelDataCsv['sub_region_2']==subRegion
-#     onlyRegion = israelDataCsv[isRegion]
-#     x = onlyRegion.date
-#     y = onlyRegion.residential
-#     ax.plot(x, y, label=subRegion, linewidth=0.5)
+    # Annotate - needs to be adjusted for each plot
+    # ax.annotate('school opens', xy=('2020-09-01', -20), xytext=('2020-08-20', -50), arrowprops=dict(arrowstyle="->", facecolor='black'))
+    # ax.annotate('lockdown 2', xy=('2020-09-18', -20), xytext=('2020-09-01', -60), arrowprops=dict(arrowstyle="->", facecolor='black'))
+
+    if not cities:
+        # Plot sub-regions_1 (districts)
+        for subRegion in subRegions1:
+            isRegion = israelDataCsv['sub_region_1']==subRegion
+            onlyRegion = israelDataCsv[isRegion]
+            isNoSubRegion2 = israelDataCsv['sub_region_2']!=israelDataCsv['sub_region_2'] # remove rows with sub_region_2
+            onlyRegion = onlyRegion[isNoSubRegion2]
+            x = onlyRegion.date
+            y = onlyRegion[category]
+
+            # rolling average:
+            y = y.rolling(window=rollingMeanWindowSize).mean()
+            ax.plot(x, y, label=subRegion, linewidth=1)
+    else:
+        # Plot sub-regions_2 (cities)
+        for subRegion in subRegions2:
+            isRegion = israelDataCsv['sub_region_2']==subRegion
+            onlyRegion = israelDataCsv[isRegion]
+            x = onlyRegion.date
+            y = onlyRegion[category]
+
+            # rolling average:
+            y = y.rolling(window=rollingMeanWindowSize).mean()
+            ax.plot(x, y, label=subRegion, linewidth=1)
+
+    plt.title('Changes in presence (from baseline) for: ' + category)
+
+def plotCountryDataByCategories():
+    # Plot by category
+    for cat in categories:
+        isNoSubRegion1 = israelDataCsv['sub_region_1'] != israelDataCsv['sub_region_1']  # filter only israel non-region data
+        countryData = israelDataCsv[isNoSubRegion1]
+        x = countryData.date
+        y = countryData[cat]
+
+        # rolling average:
+        y = y.rolling(window=rollingMeanWindowSize).mean()
+        label = cat
+        if cat == categories[5]:
+            label += ' (time spent at)'
+        else:
+            label += ' (visitors)'
+        ax.plot(x, y, label=label, linewidth=1)
+
+    plt.title('Changes in presence (from baseline) for Israel')
+
+# set category to plot here:
+category = categories[2]
+
+# Main plots to run: (should choose one)
+# plotByRegions(category, False) # plot distrticts
+# plotByRegions(category, True) # plot cities
+plotCountryDataByCategories() # plot by category
 
 plt.xlabel('Date')
 plt.ylabel('Change in presence')
 # plt.ylim(-100, 100)
-
-plt.title('Changes in presence (from baseline) for: ' + category)
 
 # Put a legend to the right of the current axis
 plt.subplots_adjust(right=0.75)
