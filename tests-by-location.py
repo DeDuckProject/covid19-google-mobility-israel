@@ -22,8 +22,8 @@ mohTestsByLoc = pd.read_csv('geographic-summary-per-day-2020-10-11.csv')
 # israelDataCsv = mohTestsByLoc[isIsrael]
 israelDataCsv = mohTestsByLoc.filter(items=['date', 'town', 'town_code', 'agas_code', 'accumulated_tested', 'accumulated_cases'])
 israelDataCsv = israelDataCsv.replace(to_replace=r'^<15$', value='15', regex=True) # turn '<15' to 15
-israelDataCsv.accumulated_tested.astype(int)
-israelDataCsv.accumulated_cases.astype(int)
+israelDataCsv.accumulated_tested = israelDataCsv.accumulated_tested.astype(int)
+israelDataCsv.accumulated_cases = israelDataCsv.accumulated_cases.astype(int)
 
 # print (israelDataCsv)
 # list sub regions 1,2:
@@ -34,13 +34,14 @@ agas_codes = israelDataCsv['agas_code'].unique()
 
 def getTownsByHighestAccumulatedCases(numOfTownsToSelect):
     selectedTowns = []
+    # TODO this is incomplete. for each town, all agas_code sections should be aggragated and only then find out...:
     for town in towns:
         isCurrentTown = israelDataCsv['town'] == town  # filter only current town
         townData = israelDataCsv[isCurrentTown]
         accum = townData.accumulated_cases.iloc[-1]
         selectedTowns.append((town, accum))
     towns_sorted_by_second = sorted(selectedTowns, key=lambda tup: tup[1])
-    return towns_sorted_by_second[0:numOfTownsToSelect]
+    return list(map(lambda x: x[0], towns_sorted_by_second[0:numOfTownsToSelect]))
 
 # filter From date if needed
 # dateFilter = israelDataCsv['date'] > '2020-08-15'
@@ -63,7 +64,7 @@ def plotByTown(towns):
         y = y.diff().fillna(0)
 
         # rolling average:
-        y = y.rolling(window=rollingMeanWindowSize).mean()
+        # y = y.rolling(window=rollingMeanWindowSize).mean()
         label = town
         ax.plot(x, y, label=label, linewidth=1)
 
