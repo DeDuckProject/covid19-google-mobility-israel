@@ -64,10 +64,6 @@ def plotByRegions(category, cities):
     y = y.rolling(window=rollingMeanWindowSize).mean()
     ax.plot(x, y, 'k--', label='Israel average', linewidth=1)
 
-    # Annotate - needs to be adjusted for each plot
-    # ax.annotate('school opens', xy=('2020-09-01', -20), xytext=('2020-08-20', -50), arrowprops=dict(arrowstyle="->", facecolor='black'))
-    # ax.annotate('lockdown 2', xy=('2020-09-18', -20), xytext=('2020-09-01', -60), arrowprops=dict(arrowstyle="->", facecolor='black'))
-
     if not cities:
         # Plot sub-regions_1 (districts)
         for subRegion in subRegions1:
@@ -114,6 +110,11 @@ def plotCountryDataByCategories():
 
     plt.title('Changes in presence (from baseline) for Israel')
 
+def plotAnnotations():
+    # Annotate - needs to be adjusted for each plot
+    ax.annotate('school opens', xy=('2020-09-01', -20), xytext=('2020-08-20', -50), arrowprops=dict(arrowstyle="->", facecolor='black'))
+    ax.annotate('lockdown 2', xy=('2020-09-18', -20), xytext=('2020-09-01', -60), arrowprops=dict(arrowstyle="->", facecolor='black'))
+
 # set category to plot here:
 category = categories[2]
 
@@ -121,6 +122,7 @@ category = categories[2]
 # plotByRegions(category, False) # plot distrticts
 # plotByRegions(category, True) # plot cities
 plotCountryDataByCategories() # plot by category
+plotAnnotations()
 
 plt.xlabel('Date')
 plt.ylabel('Change in presence')
