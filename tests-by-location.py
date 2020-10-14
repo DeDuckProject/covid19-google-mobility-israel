@@ -25,33 +25,35 @@ israelDataCsv = israelDataCsv.replace(to_replace=r'^<15$', value='15', regex=Tru
 israelDataCsv.accumulated_tested = israelDataCsv.accumulated_tested.astype(int)
 israelDataCsv.accumulated_cases = israelDataCsv.accumulated_cases.astype(int)
 
+# Group towns: towns are divided into sections (which are noted by agas_code). this groups them:
+israelDataCsv = israelDataCsv.groupby(['town','date']).agg({'accumulated_tested': 'sum', 'accumulated_cases': 'sum'}).reset_index()
+
 # print (israelDataCsv)
 # list sub regions 1,2:
 # townCodes = israelDataCsv['town_code'].unique()
 towns = israelDataCsv['town'].unique()
-towns_codes = israelDataCsv['town_code'].unique()
-agas_codes = israelDataCsv['agas_code'].unique()
+# towns_codes = israelDataCsv['town_code'].unique()
+# agas_codes = israelDataCsv['agas_code'].unique()
 
 def getTownsByHighestAccumulatedCases(numOfTownsToSelect):
     selectedTowns = []
-    # TODO this is incomplete. for each town, all agas_code sections should be aggragated and only then find out...:
     for town in towns:
         isCurrentTown = israelDataCsv['town'] == town  # filter only current town
         townData = israelDataCsv[isCurrentTown]
         accum = townData.accumulated_cases.iloc[-1]
         selectedTowns.append((town, accum))
-    towns_sorted_by_second = sorted(selectedTowns, key=lambda tup: tup[1])
-    return list(map(lambda x: x[0], towns_sorted_by_second[0:numOfTownsToSelect]))
+    towns_sorted_by_second = sorted(selectedTowns, key=lambda tup: tup[1])[::-1]
+    return list(map(lambda x: x[0], towns_sorted_by_second[0:numOfTownsToSelect-1]))
 
 # filter From date if needed
 # dateFilter = israelDataCsv['date'] > '2020-08-15'
 # israelDataCsv = israelDataCsv[dateFilter]
 
-rollingMeanWindowSize = 3
+rollingMeanWindowSize = 7
 
 fig, ax = plt.subplots()
-# ax.xaxis.set_major_locator(months)
-# ax.xaxis.set_minor_locator(days)
+ax.xaxis.set_major_locator(months)
+ax.xaxis.set_minor_locator(days)
 # ax.yaxis.set_major_formatter(mtick.PercentFormatter())
 
 def plotByTown(towns):
@@ -64,8 +66,8 @@ def plotByTown(towns):
         y = y.diff().fillna(0)
 
         # rolling average:
-        # y = y.rolling(window=rollingMeanWindowSize).mean()
-        label = town
+        y = y.rolling(window=rollingMeanWindowSize).mean()
+        label = town[::-1]
         ax.plot(x, y, label=label, linewidth=1)
 
     plt.title('Tests per town')
