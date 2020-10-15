@@ -58,33 +58,6 @@ def groupyByWeek(df):
     df = df.groupby([pd.Grouper(key='date', freq='W-MON')])['accumulated_tested', 'accumulated_cases', 'accumulated_hospitalized'].sum().reset_index().sort_values('date')
     return df
 
-def plotByTown(towns,which):
-    if which == 'tests':
-        column = 'accumulated_tested'
-        plt.title('Tests per town')
-        plt.ylabel('Daily number of tests')
-    else:
-        if which == 'cases':
-            column = 'accumulated_cases'
-            plt.title('Cases per town')
-            plt.ylabel('Daily number of cases')
-        else:
-            column = 'accumulated_hospitalized'
-            plt.title('Hospitalized per town')
-            plt.ylabel('Daily number of hospitalizations')
-    # Plot by category
-    for town in towns:
-        isCurrentTown = israelDataCsv['town'] == town  # filter only current town
-        townData = israelDataCsv[isCurrentTown]
-        x = townData.date
-        y = townData[column]
-        y = y.diff().fillna(0)
-
-        # rolling average:
-        y = y.rolling(window=rollingMeanWindowSize).mean()
-        label = town[::-1]
-        ax.plot(x, y, label=label, linewidth=1)
-
 def plotByTownPositiveRate(towns):
     # Plot by category
     for town in towns:
