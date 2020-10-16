@@ -6,26 +6,39 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 
+useTestsDataInsteadOfTested = True # If this is true, the plots will be based upon total tests and NOT tested individuals (affects tests plot, and positive rate plot)
+
 # Date formatting for X-axis
 months = mdates.MonthLocator()  # every month
 days = mdates.DayLocator() # every day
 
 # IMPORTANT: this is a big file. before running the script make sure you download it and place in the root folder:
 # https://data.gov.il/dataset/f54e79b2-3e6b-4b65-a857-f93e47997d9c/resource/d07c0771-01a8-43b2-96cc-c6154e7fa9bd/download/geographic-summary-per-day-2020-10-14.csv
-mohTestsByLoc = pd.read_csv('geographic-summary-per-day-2020-10-14.csv')
+if useTestsDataInsteadOfTested:
+    mohTestsByLoc = pd.read_csv('data/corona_city_table_ver_001.csv')
+    mohTestsByLoc = mohTestsByLoc.rename(columns={'Date': 'date', 'City_Name': 'town', 'Cumulative_verified_cases': 'accumulated_cases',
+                          'Cumulated_number_of_tests': 'accumulated_tested'})
+    israelDataCsv = mohTestsByLoc.filter(
+        items=['date', 'town', 'accumulated_tested', 'accumulated_cases'])
+    israelDataCsv['accumulated_hospitalized'] = 0 # dummy. no hospitalizations here
+else:
+    mohTestsByLoc = pd.read_csv('data/geographic-summary-per-day-2020-10-14.csv')
+    # filter data:
+    israelDataCsv = mohTestsByLoc.filter(
+        items=['date', 'town', 'town_code', 'agas_code', 'accumulated_tested', 'accumulated_cases',
+               'accumulated_hospitalized'])
 
-#filter data:
-# isIsrael = mohTestsByLoc['country_region_code'] == 'IL' # filter only israel
-# israelDataCsv = mohTestsByLoc[isIsrael]
-israelDataCsv = mohTestsByLoc.filter(items=['date', 'town', 'town_code', 'agas_code', 'accumulated_tested', 'accumulated_cases', 'accumulated_hospitalized'])
 # Get rid of '<15' values:
 israelDataCsv.accumulated_tested = israelDataCsv.accumulated_tested.replace(to_replace=r'^<15$', value='15', regex=True).astype(int)
 israelDataCsv.accumulated_cases = israelDataCsv.accumulated_cases.replace(to_replace=r'^<15$', value='0', regex=True).astype(int)
-israelDataCsv.accumulated_hospitalized = israelDataCsv.accumulated_hospitalized.replace(to_replace=r'^<15$', value='0', regex=True).astype(int)
+israelDataCsv.accumulated_hospitalized = israelDataCsv.accumulated_hospitalized.replace(to_replace=r'^<15$',
+                                                                                            value='0',
+                                                                                            regex=True).astype(int)
 israelDataCsv.date = pd.to_datetime(israelDataCsv.date) # translate string date to date
 
-# Group towns: towns are divided into sections (which are noted by agas_code). this groups them:
-israelDataCsv = israelDataCsv.groupby(['town','date']).agg({'accumulated_tested': 'sum', 'accumulated_cases': 'sum', 'accumulated_hospitalized': 'sum'}).reset_index()
+if not useTestsDataInsteadOfTested:
+    # Group towns: towns are divided into sections (which are noted by agas_code). this groups them:
+    israelDataCsv = israelDataCsv.groupby(['town','date']).agg({'accumulated_tested': 'sum', 'accumulated_cases': 'sum', 'accumulated_hospitalized': 'sum'}).reset_index()
 
 towns = israelDataCsv['town'].unique()
 
@@ -56,14 +69,19 @@ def groupByWeek(df):
 def plotByTown(towns, which, shouldGroup):
     if shouldGroup:
         prefix = 'Weekly'
-        suffix_title = ' - weekly (for week starting at...)'
+        suffix_title = ' - weekly (for week starting at...)*'
+        plt.figtext(0.8, 0.1, "*data for last week may be incomplete.", ha="center")
     else:
         prefix = 'Daily'
         suffix_title = ' - daily'
     if which == 'tests':
         column = 'accumulated_tested'
-        title = 'Tested per town' + suffix_title
-        ylabel = '{} number of tested individuals'.format(prefix)
+        if useTestsDataInsteadOfTested:
+            testString = 'Tests'
+        else:
+            testString = 'tested individuals'
+        title = '{} per town'.format(testString) + suffix_title
+        ylabel = '{} number of {}'.format(prefix, testString)
     else:
         if which == 'cases':
             column = 'accumulated_cases'
@@ -117,11 +135,11 @@ def annotate():
 
 # Main plots to run: (should choose one)
 townsToShow = getTownsByHighestAccumulatedCases(10)
-plotByTown(townsToShow, 'cases', False) # plot new cases
-# plotByTown(townsToShow, 'tests', True) # plot new tests
+# plotByTown(townsToShow, 'cases', False) # plot new cases
+# plotByTown(townsToShow, 'tests', False) # plot new tests
 # plotByTown(townsToShow, 'hospitalized', True) # plot new hospitalized
 # plotByTown(townsToShow, 'positive-rate', False) # plot positive rate - daily (very inaccurate)
-# plotByTown(townsToShow, 'positive-rate', True) # plot positive rate - weekly
+plotByTown(townsToShow, 'positive-rate', True) # plot positive rate - weekly
 annotate()
 
 plt.xlabel('Date')
