@@ -47,13 +47,16 @@ if not useTestsDataInsteadOfTested:
 towns = israelDataCsv['town'].unique()
 
 def getTownsByHighestAccumulatedCases(numOfTownsToSelect):
+    total = 0
     selectedTowns = []
     for town in towns:
         isCurrentTown = israelDataCsv['town'] == town  # filter only current town
         townData = israelDataCsv[isCurrentTown]
-        accum = townData.accumulated_cases.iloc[-1]
+        accum = townData.accumulated_tested.iloc[-1]
+        total += accum
         selectedTowns.append((town, accum))
     towns_sorted_by_second = sorted(selectedTowns, key=lambda tup: tup[1])[::-1]
+    print ('total tests/tested individuals: {}'.format(total))
     return list(map(lambda x: x[0], towns_sorted_by_second[0:numOfTownsToSelect]))
 
 # filter From date if needed
