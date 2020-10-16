@@ -27,12 +27,7 @@ israelDataCsv.date = pd.to_datetime(israelDataCsv.date) # translate string date 
 # Group towns: towns are divided into sections (which are noted by agas_code). this groups them:
 israelDataCsv = israelDataCsv.groupby(['town','date']).agg({'accumulated_tested': 'sum', 'accumulated_cases': 'sum', 'accumulated_hospitalized': 'sum'}).reset_index()
 
-# print (israelDataCsv)
-# list sub regions 1,2:
-# townCodes = israelDataCsv['town_code'].unique()
 towns = israelDataCsv['town'].unique()
-# towns_codes = israelDataCsv['town_code'].unique()
-# agas_codes = israelDataCsv['agas_code'].unique()
 
 def getTownsByHighestAccumulatedCases(numOfTownsToSelect):
     selectedTowns = []
@@ -45,7 +40,7 @@ def getTownsByHighestAccumulatedCases(numOfTownsToSelect):
     return list(map(lambda x: x[0], towns_sorted_by_second[0:numOfTownsToSelect]))
 
 # filter From date if needed
-dateFilter = israelDataCsv['date'] > dt.datetime(2020, 8, 1)
+dateFilter = israelDataCsv['date'] > dt.datetime(2020, 8, 2) # Starting from 2.8 since its a sunday, and groupby will work better
 israelDataCsv = israelDataCsv[dateFilter]
 
 rollingMeanWindowSize = 7
@@ -53,29 +48,65 @@ rollingMeanWindowSize = 7
 fig, ax = plt.subplots()
 
 # TODO make sure works:
-def groupyByWeek(df):
+def groupByWeek(df):
     df['date'] = pd.to_datetime(df['date']) - pd.to_timedelta(7, unit='d')
-    df = df.groupby([pd.Grouper(key='date', freq='W-MON')])['accumulated_tested', 'accumulated_cases', 'accumulated_hospitalized'].sum().reset_index().sort_values('date')
+    df = df.groupby([pd.Grouper(key='date', freq='W-SUN')])['accumulated_tested', 'accumulated_cases', 'accumulated_hospitalized'].sum().reset_index().sort_values('date')
     return df
 
-def plotByTownPositiveRate(towns):
+def plotByTown(towns, which, shouldGroup):
+    if shouldGroup:
+        prefix = 'Weekly'
+        suffix_title = ' - weekly (for week starting at...)'
+    else:
+        prefix = 'Daily'
+        suffix_title = ' - daily'
+    if which == 'tests':
+        column = 'accumulated_tested'
+        title = 'Tested per town' + suffix_title
+        ylabel = '{} number of tested individuals'.format(prefix)
+    else:
+        if which == 'cases':
+            column = 'accumulated_cases'
+            title = 'Cases per town' + suffix_title
+            ylabel = '{} number of cases'.format(prefix)
+        else:
+            if which == 'hospitalized':
+                column = 'accumulated_hospitalized'
+                title = 'Hospitalized per town' + suffix_title
+                ylabel = '{} number of hospitalizations'.format(prefix)
+            else:
+                ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+                title = 'Positivity rate per town' + suffix_title
+                ylabel = '{} positive rate'.format(prefix)
+    i = 0
     # Plot by category
     for town in towns:
         isCurrentTown = israelDataCsv['town'] == town  # filter only current town
         townData = israelDataCsv[isCurrentTown]
+        townData.accumulated_cases = townData.accumulated_cases.diff().fillna(0)
+        townData.accumulated_tested = townData.accumulated_tested.diff().fillna(0)
+        townData.accumulated_hospitalized = townData.accumulated_hospitalized.diff().fillna(0)
+        if shouldGroup:
+            townData = groupByWeek(townData)
         x = townData.date
-        new_cases = townData.accumulated_cases.diff().fillna(0)
-        new_tests = townData.accumulated_tested.diff().fillna(1)
-        y = (new_cases / new_tests) * 100
+        if which == 'positive-rate':
+            new_cases = townData.accumulated_cases
+            new_tests = townData.accumulated_tested
+            y = (new_cases / new_tests) * 100
+        else:
+            y = townData[column]
 
         # rolling average:
-        y = y.rolling(window=rollingMeanWindowSize).mean()
+        if not shouldGroup:
+            y = y.rolling(window=rollingMeanWindowSize).mean()
         label = town[::-1]
         ax.plot(x, y, label=label, linewidth=1)
+        if shouldGroup:
+            ax.plot(x, y, 'C{}o'.format(i), alpha=0.5) # plot dots on lines
+        i += 1
 
-    plt.title('Positivity rate per town')
-    plt.ylabel('Daily positive rate')
-    ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+    plt.title(title)
+    plt.ylabel(ylabel)
 
 def annotate():
     # Annotate
@@ -85,10 +116,12 @@ def annotate():
     ax.text(x=x_text_annotation, y=10, s='2nd lockdown', alpha=0.7, color='#000000')
 
 # Main plots to run: (should choose one)
-plotByTown(getTownsByHighestAccumulatedCases(10), 'cases') # plot new cases
-# plotByTown(getTownsByHighestAccumulatedCases(10), 'tests') # plot new tests
-# plotByTown(getTownsByHighestAccumulatedCases(10), 'hospitalized') # plot new hospitalized
-# plotByTownPositiveRate(getTownsByHighestAccumulatedCases(10)) # plot positive rate
+townsToShow = getTownsByHighestAccumulatedCases(10)
+plotByTown(townsToShow, 'cases', False) # plot new cases
+# plotByTown(townsToShow, 'tests', True) # plot new tests
+# plotByTown(townsToShow, 'hospitalized', True) # plot new hospitalized
+# plotByTown(townsToShow, 'positive-rate', False) # plot positive rate - daily (very inaccurate)
+# plotByTown(townsToShow, 'positive-rate', True) # plot positive rate - weekly
 annotate()
 
 plt.xlabel('Date')
