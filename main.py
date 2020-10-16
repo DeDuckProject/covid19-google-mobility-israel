@@ -2,6 +2,9 @@ import pandas as pd
 import ssl
 import matplotlib
 import numpy as np
+
+from annotations import annotate
+
 matplotlib.use('TkAgg')
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -110,19 +113,14 @@ def plotCountryDataByCategories():
 
     plt.title('Changes in presence (from baseline) for Israel')
 
-def plotAnnotations():
-    # Annotate - needs to be adjusted for each plot
-    ax.annotate('school opens', xy=('2020-09-01', -20), xytext=('2020-08-20', -50), arrowprops=dict(arrowstyle="->", facecolor='black'))
-    ax.annotate('lockdown 2', xy=('2020-09-18', -20), xytext=('2020-09-01', -60), arrowprops=dict(arrowstyle="->", facecolor='black'))
-
 # set category to plot here:
 category = categories[2]
 
 # Main plots to run: (should choose one)
-# plotByRegions(category, False) # plot distrticts
+# plotByRegions(category, False) # plot districts
 # plotByRegions(category, True) # plot cities
 plotCountryDataByCategories() # plot by category
-plotAnnotations()
+annotate(ax, [-80, -85])
 
 plt.xlabel('Date')
 plt.ylabel('Change in presence')

@@ -1,6 +1,9 @@
 import pandas as pd
 import datetime as dt
 import matplotlib
+
+from annotations import annotate
+
 matplotlib.use('TkAgg')
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -12,9 +15,9 @@ useTestsDataInsteadOfTested = True # If this is true, the plots will be based up
 months = mdates.MonthLocator()  # every month
 days = mdates.DayLocator() # every day
 
-# IMPORTANT: this is a big file. before running the script make sure you download it and place in the root folder:
-# https://data.gov.il/dataset/f54e79b2-3e6b-4b65-a857-f93e47997d9c/resource/d07c0771-01a8-43b2-96cc-c6154e7fa9bd/download/geographic-summary-per-day-2020-10-14.csv
+# IMPORTANT: before running the script make sure you download the dataset and place in /data:
 if useTestsDataInsteadOfTested:
+    # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_001.csv
     mohTestsByLoc = pd.read_csv('data/corona_city_table_ver_001.csv')
     mohTestsByLoc = mohTestsByLoc.rename(columns={'Date': 'date', 'City_Name': 'town', 'Cumulative_verified_cases': 'accumulated_cases',
                           'Cumulated_number_of_tests': 'accumulated_tested'})
@@ -22,6 +25,7 @@ if useTestsDataInsteadOfTested:
         items=['date', 'town', 'accumulated_tested', 'accumulated_cases'])
     israelDataCsv['accumulated_hospitalized'] = 0 # dummy. no hospitalizations here
 else:
+    # https://data.gov.il/dataset/f54e79b2-3e6b-4b65-a857-f93e47997d9c/resource/d07c0771-01a8-43b2-96cc-c6154e7fa9bd/download/geographic-summary-per-day-2020-10-14.csv
     mohTestsByLoc = pd.read_csv('data/geographic-summary-per-day-2020-10-14.csv')
     # filter data:
     israelDataCsv = mohTestsByLoc.filter(
@@ -126,13 +130,6 @@ def plotByTown(towns, which, shouldGroup):
     plt.title(title)
     plt.ylabel(ylabel)
 
-def annotate():
-    # Annotate
-    x_line_annotation = '2020-09-18'
-    x_text_annotation = '2020-09-19'
-    ax.axvline(x=x_line_annotation, linestyle='dashed', alpha=0.5, color='#6BADEF')
-    ax.text(x=x_text_annotation, y=10, s='2nd lockdown', alpha=0.7, color='#000000')
-
 # Main plots to run: (should choose one)
 townsToShow = getTownsByHighestAccumulatedCases(10)
 # plotByTown(townsToShow, 'cases', False) # plot new cases
@@ -140,7 +137,7 @@ townsToShow = getTownsByHighestAccumulatedCases(10)
 # plotByTown(townsToShow, 'hospitalized', True) # plot new hospitalized
 # plotByTown(townsToShow, 'positive-rate', False) # plot positive rate - daily (very inaccurate)
 plotByTown(townsToShow, 'positive-rate', True) # plot positive rate - weekly
-annotate()
+annotate(ax, [10, 10])
 
 plt.xlabel('Date')
 plt.ylim(0)
