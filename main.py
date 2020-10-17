@@ -107,7 +107,7 @@ def plotByRegions(countryDf, subRegions1, subRegions2, category, cities):
 
     plt.title('Changes in presence (from baseline) for: ' + category)
 
-def plotCountryDataByCategories(countryDf, shouldGroupWeek):
+def plotCountryDataByCategories(countryDf, shouldGroupWeek, categories):
     i=0
     # Plot by category
     for cat in categories:
@@ -139,8 +139,8 @@ category = categories[2]
 
 # Main plots to run: (should choose one)
 # plotByRegions(countryDf, subRegions1, subRegions2, category, False) # plot districts
-plotByRegions(countryDf, subRegions1, subRegions2, category, True) # plot cities
-# plotCountryDataByCategories(countryDf, False) # plot by category
+# plotByRegions(countryDf, subRegions1, subRegions2, category, True) # plot cities
+plotCountryDataByCategories(countryDf, False, categories) # plot by category
 annotate(ax, [-80, -85])
 
 plt.xlabel('Date')
