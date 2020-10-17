@@ -27,29 +27,33 @@ ssl._create_default_https_context = ssl._create_unverified_context
 #load downloaded csv from local cache - un-comment this to use the already downloaded data
 googleMobilityCsv = pd.read_pickle('Global_Mobility_Report.pkl')
 
-#filter data:
-isIsrael = googleMobilityCsv['country_region_code']=='IL' # filter only israel
-israelDataCsv = googleMobilityCsv[isIsrael]
-israelDataCsv = israelDataCsv.filter(items=['date', 'sub_region_1', 'sub_region_2', 'retail_and_recreation_percent_change_from_baseline', 'grocery_and_pharmacy_percent_change_from_baseline', 'parks_percent_change_from_baseline', 'transit_stations_percent_change_from_baseline', 'workplaces_percent_change_from_baseline', 'residential_percent_change_from_baseline'])\
-    .rename(columns={"retail_and_recreation_percent_change_from_baseline": "retail", "grocery_and_pharmacy_percent_change_from_baseline": "grocery", "parks_percent_change_from_baseline": 'parks', 'transit_stations_percent_change_from_baseline': 'transit', 'workplaces_percent_change_from_baseline': 'workplace', 'residential_percent_change_from_baseline': 'residential'})
+def getCountryData(country):
+    #filter data:
+    isCountryFilter = googleMobilityCsv['country_region']==country # filter only country
+    countryData = googleMobilityCsv[isCountryFilter]
+    countryData = countryData.filter(items=['country_region', 'date', 'sub_region_1', 'sub_region_2', 'retail_and_recreation_percent_change_from_baseline', 'grocery_and_pharmacy_percent_change_from_baseline', 'parks_percent_change_from_baseline', 'transit_stations_percent_change_from_baseline', 'workplaces_percent_change_from_baseline', 'residential_percent_change_from_baseline'])\
+        .rename(columns={"retail_and_recreation_percent_change_from_baseline": "retail", "grocery_and_pharmacy_percent_change_from_baseline": "grocery", "parks_percent_change_from_baseline": 'parks', 'transit_stations_percent_change_from_baseline': 'transit', 'workplaces_percent_change_from_baseline': 'workplace', 'residential_percent_change_from_baseline': 'residential'})
 
-# list sub regions 1,2:
-subRegions1 = israelDataCsv['sub_region_1'].unique()
-subRegions1 = np.delete(subRegions1, [0])
-subRegions2 = israelDataCsv['sub_region_2'].unique()
-subRegions2 = np.delete(subRegions2, [0])
+    # list sub regions 1,2:
+    subRegions1 = countryData['sub_region_1'].unique()
+    subRegions1 = np.delete(subRegions1, [0])
+    subRegions2 = countryData['sub_region_2'].unique()
+    subRegions2 = np.delete(subRegions2, [0])
 
-# Filter out weekends:
-if shouldRemoveWeekends:
-    israelDataCsv['date'] = pd.to_datetime(israelDataCsv['date'])
-    israelDataCsv['day_of_week'] = israelDataCsv['date'].dt.dayofweek
-    notSaturday = israelDataCsv['day_of_week'] != 5 # Remove sat
-    notFriday = israelDataCsv['day_of_week'] != 4 # Remove fri
-    israelDataCsv = israelDataCsv[notFriday & notSaturday]
+    # Filter out weekends:
+    # NOTE: filters out Friday+Saturday, which is proper for Israel, not necessarily to other countries.
+    if shouldRemoveWeekends:
+        countryData['date'] = pd.to_datetime(countryData['date'])
+        countryData['day_of_week'] = countryData['date'].dt.dayofweek
+        notSaturday = countryData['day_of_week'] != 5 # Remove sat
+        notFriday = countryData['day_of_week'] != 4 # Remove fri
+        countryData = countryData[notFriday & notSaturday]
 
-# filter From date if needed
-# dateFilter = israelDataCsv['date'] > '2020-08-15'
-# israelDataCsv = israelDataCsv[dateFilter]
+    # filter From date if needed
+    # dateFilter = countryData['date'] > '2020-08-15'
+    # countryData = countryData[dateFilter]
+
+    return [countryData, subRegions1, subRegions2]
 
 # category:   0         1          2        3          4            5
 categories = ['retail', 'grocery', 'parks', 'transit', 'workplace', 'residential']
@@ -66,10 +70,10 @@ def groupByWeek(df):
     df = df.groupby([pd.Grouper(key='date', freq='W-SUN')])['retail', 'grocery', 'parks', 'transit', 'workplace', 'residential'].mean().reset_index().sort_values('date')
     return df
 
-def plotByRegions(category, cities):
+def plotByRegions(countryDf, subRegions1, subRegions2, category, cities):
     # Plot country avg:
-    isNoSubRegion1 = israelDataCsv['sub_region_1']!=israelDataCsv['sub_region_1'] # filter only israel non-region data
-    countryData = israelDataCsv[isNoSubRegion1]
+    isNoSubRegion1 = countryDf['sub_region_1']!=countryDf['sub_region_1'] # filter only israel non-region data
+    countryData = countryDf[isNoSubRegion1]
     x = countryData.date
     y = countryData[category]
     # rolling average:
@@ -79,9 +83,9 @@ def plotByRegions(category, cities):
     if not cities:
         # Plot sub-regions_1 (districts)
         for subRegion in subRegions1:
-            isRegion = israelDataCsv['sub_region_1']==subRegion
-            onlyRegion = israelDataCsv[isRegion]
-            isNoSubRegion2 = israelDataCsv['sub_region_2']!=israelDataCsv['sub_region_2'] # remove rows with sub_region_2
+            isRegion = countryDf['sub_region_1']==subRegion
+            onlyRegion = countryDf[isRegion]
+            isNoSubRegion2 = countryDf['sub_region_2']!=countryDf['sub_region_2'] # remove rows with sub_region_2
             onlyRegion = onlyRegion[isNoSubRegion2]
             x = onlyRegion.date
             y = onlyRegion[category]
@@ -92,8 +96,8 @@ def plotByRegions(category, cities):
     else:
         # Plot sub-regions_2 (cities)
         for subRegion in subRegions2:
-            isRegion = israelDataCsv['sub_region_2']==subRegion
-            onlyRegion = israelDataCsv[isRegion]
+            isRegion = countryDf['sub_region_2']==subRegion
+            onlyRegion = countryDf[isRegion]
             x = onlyRegion.date
             y = onlyRegion[category]
 
@@ -103,12 +107,12 @@ def plotByRegions(category, cities):
 
     plt.title('Changes in presence (from baseline) for: ' + category)
 
-def plotCountryDataByCategories(shouldGroupWeek):
+def plotCountryDataByCategories(countryDf, shouldGroupWeek):
     i=0
     # Plot by category
     for cat in categories:
-        isNoSubRegion1 = israelDataCsv['sub_region_1'] != israelDataCsv['sub_region_1']  # filter only israel non-region data
-        countryData = israelDataCsv[isNoSubRegion1]
+        isNoSubRegion1 = countryDf['sub_region_1'] != countryDf['sub_region_1']  # filter only country non-region data
+        countryData = countryDf[isNoSubRegion1]
         if shouldGroupWeek:
             countryData = groupByWeek(countryData)
         x = countryData.date
@@ -126,15 +130,17 @@ def plotCountryDataByCategories(shouldGroupWeek):
             ax.plot(x, y, 'C{}o'.format(i), alpha=0.5)  # plot dots on lines
         i+=1
 
-    plt.title('Changes in presence (from baseline) for Israel')
+    plt.title('Changes in presence (from baseline) for {}'.format(countryDf['country_region'].iloc[0]))
 
 # set category to plot here:
 category = categories[2]
 
+[countryDf, subRegions1, subRegions2] = getCountryData('Israel')
+
 # Main plots to run: (should choose one)
-# plotByRegions(category, False) # plot districts
-# plotByRegions(category, True) # plot cities
-plotCountryDataByCategories(False) # plot by category
+# plotByRegions(countryDf, subRegions1, subRegions2, category, False) # plot districts
+plotByRegions(countryDf, subRegions1, subRegions2, category, True) # plot cities
+# plotCountryDataByCategories(countryDf, False) # plot by category
 annotate(ax, [-80, -85])
 
 plt.xlabel('Date')
