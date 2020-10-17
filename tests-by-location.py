@@ -67,7 +67,6 @@ rollingMeanWindowSize = 7
 
 fig, ax = plt.subplots()
 
-# TODO make sure works:
 def groupByWeek(df):
     df['date'] = pd.to_datetime(df['date']) - pd.to_timedelta(7, unit='d')
     df = df.groupby([pd.Grouper(key='date', freq='W-SUN')])['accumulated_tested', 'accumulated_cases', 'accumulated_hospitalized'].sum().reset_index().sort_values('date')

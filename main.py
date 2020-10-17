@@ -10,6 +10,9 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 
+# Flags:
+shouldRemoveWeekends = True
+
 # Date formatting for X-axis
 months = mdates.MonthLocator()  # every month
 days = mdates.DayLocator() # every day
@@ -37,11 +40,12 @@ subRegions2 = israelDataCsv['sub_region_2'].unique()
 subRegions2 = np.delete(subRegions2, [0])
 
 # Filter out weekends:
-israelDataCsv['date'] = pd.to_datetime(israelDataCsv['date'])
-israelDataCsv['day_of_week'] = israelDataCsv['date'].dt.dayofweek
-notSaturday = israelDataCsv['day_of_week'] != 5 # Remove sat
-notFriday = israelDataCsv['day_of_week'] != 4 # Remove fri
-israelDataCsv = israelDataCsv[notFriday & notSaturday]
+if shouldRemoveWeekends:
+    israelDataCsv['date'] = pd.to_datetime(israelDataCsv['date'])
+    israelDataCsv['day_of_week'] = israelDataCsv['date'].dt.dayofweek
+    notSaturday = israelDataCsv['day_of_week'] != 5 # Remove sat
+    notFriday = israelDataCsv['day_of_week'] != 4 # Remove fri
+    israelDataCsv = israelDataCsv[notFriday & notSaturday]
 
 # filter From date if needed
 # dateFilter = israelDataCsv['date'] > '2020-08-15'
@@ -56,6 +60,11 @@ fig, ax = plt.subplots()
 # ax.xaxis.set_major_locator(months)
 # ax.xaxis.set_minor_locator(days)
 ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+
+def groupByWeek(df):
+    df['date'] = pd.to_datetime(df['date']) - pd.to_timedelta(7, unit='d')
+    df = df.groupby([pd.Grouper(key='date', freq='W-SUN')])['retail', 'grocery', 'parks', 'transit', 'workplace', 'residential'].mean().reset_index().sort_values('date')
+    return df
 
 def plotByRegions(category, cities):
     # Plot country avg:
@@ -94,11 +103,14 @@ def plotByRegions(category, cities):
 
     plt.title('Changes in presence (from baseline) for: ' + category)
 
-def plotCountryDataByCategories():
+def plotCountryDataByCategories(shouldGroupWeek):
+    i=0
     # Plot by category
     for cat in categories:
         isNoSubRegion1 = israelDataCsv['sub_region_1'] != israelDataCsv['sub_region_1']  # filter only israel non-region data
         countryData = israelDataCsv[isNoSubRegion1]
+        if shouldGroupWeek:
+            countryData = groupByWeek(countryData)
         x = countryData.date
         y = countryData[cat]
 
@@ -110,6 +122,9 @@ def plotCountryDataByCategories():
         else:
             label += ' (visitors)'
         ax.plot(x, y, label=label, linewidth=1)
+        if shouldGroupWeek:
+            ax.plot(x, y, 'C{}o'.format(i), alpha=0.5)  # plot dots on lines
+        i+=1
 
     plt.title('Changes in presence (from baseline) for Israel')
 
@@ -119,7 +134,7 @@ category = categories[2]
 # Main plots to run: (should choose one)
 # plotByRegions(category, False) # plot districts
 # plotByRegions(category, True) # plot cities
-plotCountryDataByCategories() # plot by category
+plotCountryDataByCategories(False) # plot by category
 annotate(ax, [-80, -85])
 
 plt.xlabel('Date')
