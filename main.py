@@ -56,9 +56,9 @@ def getCountryData(country):
     return [countryData, subRegions1, subRegions2]
 
 # category:   0         1          2        3          4            5
-categories = ['retail', 'grocery', 'parks', 'transit', 'workplace', 'residential']
+allCategories = ['retail', 'grocery', 'parks', 'transit', 'workplace', 'residential']
 
-rollingMeanWindowSize = 3
+rollingMeanWindowSize = 7
 
 fig, ax = plt.subplots()
 # ax.xaxis.set_major_locator(months)
@@ -108,6 +108,7 @@ def plotByRegions(countryDf, subRegions1, subRegions2, category, cities):
     plt.title('Changes in presence (from baseline) for: ' + category)
 
 def plotCountryDataByCategories(countryDf, shouldGroupWeek, categories):
+    countryName = countryDf['country_region'].iloc[0]
     i=0
     # Plot by category
     for cat in categories:
@@ -120,8 +121,8 @@ def plotCountryDataByCategories(countryDf, shouldGroupWeek, categories):
 
         # rolling average:
         y = y.rolling(window=rollingMeanWindowSize).mean()
-        label = cat
-        if cat == categories[5]:
+        label = '{} - {}'.format(countryName, cat)
+        if cat == allCategories[5]:
             label += ' (time spent at)'
         else:
             label += ' (visitors)'
@@ -130,17 +131,17 @@ def plotCountryDataByCategories(countryDf, shouldGroupWeek, categories):
             ax.plot(x, y, 'C{}o'.format(i), alpha=0.5)  # plot dots on lines
         i+=1
 
-    plt.title('Changes in presence (from baseline) for {}'.format(countryDf['country_region'].iloc[0]))
+    plt.title('Changes in presence (from baseline) for {}'.format(countryName))
 
 # set category to plot here:
-category = categories[2]
+category = allCategories[2]
 
 [countryDf, subRegions1, subRegions2] = getCountryData('Israel')
 
 # Main plots to run: (should choose one)
 # plotByRegions(countryDf, subRegions1, subRegions2, category, False) # plot districts
 # plotByRegions(countryDf, subRegions1, subRegions2, category, True) # plot cities
-plotCountryDataByCategories(countryDf, False, categories) # plot by category
+plotCountryDataByCategories(countryDf, False, [allCategories[5]]) # plot by category
 annotate(ax, [-80, -85])
 
 plt.xlabel('Date')
