@@ -141,7 +141,7 @@ category = allCategories[2]
 # Main plots to run: (should choose one)
 # plotByRegions(countryDf, subRegions1, subRegions2, category, False) # plot districts
 # plotByRegions(countryDf, subRegions1, subRegions2, category, True) # plot cities
-plotCountryDataByCategories(countryDf, False, [allCategories[5]]) # plot by category
+plotCountryDataByCategories(countryDf, False, allCategories) # plot by category
 annotate(ax, [-80, -85])
 
 plt.xlabel('Date')
