@@ -1,5 +1,7 @@
 import pandas as pd
 import ssl
+import os
+import datetime
 import matplotlib
 import numpy as np
 
@@ -21,11 +23,14 @@ days = mdates.DayLocator() # every day
 ssl._create_default_https_context = ssl._create_unverified_context
 
 #get new data from google - comment this out to disable downloading every time
+google_mobilty_pickle_filename = 'Global_Mobility_Report.pkl'
 # googleMobilityCsv = pd.read_csv('https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv')
-# googleMobilityCsv.to_pickle('Global_Mobility_Report.pkl')
+# googleMobilityCsv.to_pickle(google_mobilty_pickle_filename)
 
 #load downloaded csv from local cache - un-comment this to use the already downloaded data
-googleMobilityCsv = pd.read_pickle('Global_Mobility_Report.pkl')
+
+googleMobilityCsv = pd.read_pickle(google_mobilty_pickle_filename)
+dateFetched = datetime.datetime.fromtimestamp(os.path.getmtime(google_mobilty_pickle_filename)).strftime("%d/%m/%y")
 
 def getCountryData(country):
     #filter data:
@@ -55,7 +60,7 @@ def getCountryData(country):
 
     return [countryData, subRegions1, subRegions2]
 
-# category:   0         1          2        3          4            5
+# category:      0         1          2        3          4            5
 allCategories = ['retail', 'grocery', 'parks', 'transit', 'workplace', 'residential']
 
 rollingMeanWindowSize = 7
@@ -74,11 +79,12 @@ def plotByRegions(countryDf, subRegions1, subRegions2, category, cities):
     # Plot country avg:
     isNoSubRegion1 = countryDf['sub_region_1']!=countryDf['sub_region_1'] # filter only israel non-region data
     countryData = countryDf[isNoSubRegion1]
+    countryName = countryDf['country_region'].iloc[0]
     x = countryData.date
     y = countryData[category]
     # rolling average:
     y = y.rolling(window=rollingMeanWindowSize).mean()
-    ax.plot(x, y, 'k--', label='Israel average', linewidth=1)
+    ax.plot(x, y, 'k--', label='{} average'.format(countryName), linewidth=1)
 
     if not cities:
         # Plot sub-regions_1 (districts)
@@ -141,11 +147,12 @@ category = allCategories[2]
 # Main plots to run: (should choose one)
 # plotByRegions(countryDf, subRegions1, subRegions2, category, False) # plot districts
 # plotByRegions(countryDf, subRegions1, subRegions2, category, True) # plot cities
-plotCountryDataByCategories(countryDf, False, allCategories) # plot by category
-annotate(ax, [-80, -85])
+plotCountryDataByCategories(countryDf, True, [category]) # plot by category
+# annotate(ax, [-80, -85])
 
 plt.xlabel('Date')
 plt.ylabel('Change in presence')
+plt.figtext(0.7, 0.1, 'Google LLC "Google COVID-19 Community Mobility Reports".\nhttps://www.google.com/covid19/mobility/ Accessed: {}'.format(dateFetched), ha="center")
 # plt.ylim(-100, 100)
 
 # Put a legend to the right of the current axis
