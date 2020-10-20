@@ -50,8 +50,8 @@ def getCountryData(country):
     if shouldRemoveWeekends:
         countryData['date'] = pd.to_datetime(countryData['date'])
         countryData['day_of_week'] = countryData['date'].dt.dayofweek
-        notSaturday = countryData['day_of_week'] != 6 # Remove sat
-        notFriday = countryData['day_of_week'] != 5 # Remove fri
+        notSaturday = countryData['day_of_week'] != 5 # Remove sat
+        notFriday = countryData['day_of_week'] != 4 # Remove fri
         countryData = countryData[notFriday & notSaturday]
 
     # filter From date if needed
@@ -60,7 +60,7 @@ def getCountryData(country):
 
     return [countryData, subRegions1, subRegions2]
 
-# category:   0         1          2        3          4            5
+# category:      0         1          2        3          4            5
 allCategories = ['retail', 'grocery', 'parks', 'transit', 'workplace', 'residential']
 
 rollingMeanWindowSize = 7
@@ -79,11 +79,12 @@ def plotByRegions(countryDf, subRegions1, subRegions2, category, cities):
     # Plot country avg:
     isNoSubRegion1 = countryDf['sub_region_1']!=countryDf['sub_region_1'] # filter only israel non-region data
     countryData = countryDf[isNoSubRegion1]
+    countryName = countryDf['country_region'].iloc[0]
     x = countryData.date
     y = countryData[category]
     # rolling average:
     y = y.rolling(window=rollingMeanWindowSize).mean()
-    ax.plot(x, y, 'k--', label='Israel average', linewidth=1)
+    ax.plot(x, y, 'k--', label='{} average'.format(countryName), linewidth=1)
 
     if not cities:
         # Plot sub-regions_1 (districts)
