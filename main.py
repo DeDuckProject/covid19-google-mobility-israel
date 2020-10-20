@@ -1,5 +1,7 @@
 import pandas as pd
 import ssl
+import os
+import datetime
 import matplotlib
 import numpy as np
 
@@ -21,11 +23,14 @@ days = mdates.DayLocator() # every day
 ssl._create_default_https_context = ssl._create_unverified_context
 
 #get new data from google - comment this out to disable downloading every time
+google_mobilty_pickle_filename = 'Global_Mobility_Report.pkl'
 # googleMobilityCsv = pd.read_csv('https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv')
-# googleMobilityCsv.to_pickle('Global_Mobility_Report.pkl')
+# googleMobilityCsv.to_pickle(google_mobilty_pickle_filename)
 
 #load downloaded csv from local cache - un-comment this to use the already downloaded data
-googleMobilityCsv = pd.read_pickle('Global_Mobility_Report.pkl')
+
+googleMobilityCsv = pd.read_pickle(google_mobilty_pickle_filename)
+dateFetched = datetime.datetime.fromtimestamp(os.path.getmtime(google_mobilty_pickle_filename)).strftime("%d/%m/%y")
 
 def getCountryData(country):
     #filter data:
@@ -146,6 +151,7 @@ plotCountryDataByCategories(countryDf, True, [category]) # plot by category
 
 plt.xlabel('Date')
 plt.ylabel('Change in presence')
+plt.figtext(0.7, 0.1, 'Google LLC "Google COVID-19 Community Mobility Reports".\nhttps://www.google.com/covid19/mobility/ Accessed: {}'.format(dateFetched), ha="center")
 # plt.ylim(-100, 100)
 
 # Put a legend to the right of the current axis
