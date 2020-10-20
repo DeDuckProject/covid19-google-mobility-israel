@@ -15,6 +15,7 @@ useTestsDataInsteadOfTested = True # If this is true, the plots will be based up
 class MetricToChooseTowns(Enum):
     HIGHEST_ACCUMULATED_CASES_NOT_NORMALIZED = 1
     HIGHEST_WEEKLY_INCREASE_IN_POSITIVITY_RATE = 2
+    HIGHEST_WEEKLY_INCREASE_IN_CASES = 3
 
 class MetricToPlot(Enum):
     TESTS = 1
@@ -86,6 +87,13 @@ def getTownsBy(numOfTownsToSelect, byWhichMetric, filterLowerThan=0):
                 y = (new_cases / new_tests) * 100
                 y = y.diff().fillna(0)
                 metric = y.iloc[-1]
+            else:
+                if byWhichMetric == MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_CASES:
+                    townData.accumulated_cases = townData.accumulated_cases.diff().fillna(0)
+                    townData = groupByWeek(townData)
+                    y = townData.accumulated_cases.diff().fillna(0)
+                    y = y.diff().fillna(0)
+                    metric = y.iloc[-1]
         total += metric
         selectedTowns.append((town, metric))
     towns_sorted_by_second = sorted(selectedTowns, key=lambda tup: tup[1])[::-1]
@@ -105,7 +113,8 @@ def groupByWeek(df):
     df = df.groupby([pd.Grouper(key='date', freq='W-SUN')])['accumulated_tested', 'accumulated_cases', 'accumulated_hospitalized'].sum().reset_index().sort_values('date')
     return df
 
-def plotByTown(towns, which, shouldGroup):
+def plotByTown(towns, which, shouldGroup=False, shouldNormalize=False):
+    per_capita = 1000
     if shouldGroup:
         prefix = 'Weekly'
         suffix_title = ' - weekly (for week starting at...)*'
@@ -135,11 +144,15 @@ def plotByTown(towns, which, shouldGroup):
                 ax.yaxis.set_major_formatter(mtick.PercentFormatter())
                 title = 'Positivity rate per town' + suffix_title
                 ylabel = '{} positive rate'.format(prefix)
+    if shouldNormalize:
+        ylabel += ' per {} people'.format(per_capita)
+        title += ' per capita'
     i = 0
     # Plot by category
     for town in towns:
         isCurrentTown = israelDataCsv['town'] == town  # filter only current town
         townData = israelDataCsv[isCurrentTown]
+        townTotalPopulation = getPopulationByCityCode(townData.City_Code.iloc[0])
         townData.accumulated_cases = townData.accumulated_cases.diff().fillna(0)
         townData.accumulated_tested = townData.accumulated_tested.diff().fillna(0)
         townData.accumulated_hospitalized = townData.accumulated_hospitalized.diff().fillna(0)
@@ -152,6 +165,8 @@ def plotByTown(towns, which, shouldGroup):
             y = (new_cases / new_tests) * 100
         else:
             y = townData[column]
+            if shouldNormalize:
+                y = y * (per_capita / townTotalPopulation)
 
         # rolling average:
         if not shouldGroup:
@@ -168,11 +183,12 @@ def plotByTown(towns, which, shouldGroup):
 # Main plots to run: (should choose one)
 townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_ACCUMULATED_CASES_NOT_NORMALIZED)
 # townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_POSITIVITY_RATE, 10000)
-# townsToShow = ['ערערה', 'פוריידיס', 'ריינה', "מג'דל שמס", 'באקה אל-גרביה', 'טמרה', 'בסמ""ה', "בועיינה-נוג'ידאת"] # temp list for towns with rising pos rate
+# townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_CASES)
+shouldNormalize = True
 
-plotByTown(townsToShow, MetricToPlot.CASES, False) # plot new cases
-# plotByTown(townsToShow, MetricToPlot.TESTS, False) # plot new tests
-# plotByTown(townsToShow, MetricToPlot.HOSPITALIZED, True) # plot new hospitalized
+plotByTown(townsToShow, MetricToPlot.CASES, False, shouldNormalize=shouldNormalize) # plot new cases
+# plotByTown(townsToShow, MetricToPlot.TESTS, False, shouldNormalize=shouldNormalize) # plot new tests
+# plotByTown(townsToShow, MetricToPlot.HOSPITALIZED, True, shouldNormalize=shouldNormalize) # plot new hospitalized
 # plotByTown(townsToShow, MetricToPlot.POSITIVE_RATE, False) # plot positive rate - daily (very inaccurate)
 # plotByTown(townsToShow, MetricToPlot.POSITIVE_RATE, True) # plot positive rate - weekly
 annotate(ax, [10, 10])
