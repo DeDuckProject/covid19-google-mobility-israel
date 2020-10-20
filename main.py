@@ -45,8 +45,8 @@ def getCountryData(country):
     if shouldRemoveWeekends:
         countryData['date'] = pd.to_datetime(countryData['date'])
         countryData['day_of_week'] = countryData['date'].dt.dayofweek
-        notSaturday = countryData['day_of_week'] != 5 # Remove sat
-        notFriday = countryData['day_of_week'] != 4 # Remove fri
+        notSaturday = countryData['day_of_week'] != 6 # Remove sat
+        notFriday = countryData['day_of_week'] != 5 # Remove fri
         countryData = countryData[notFriday & notSaturday]
 
     # filter From date if needed
@@ -141,8 +141,8 @@ category = allCategories[2]
 # Main plots to run: (should choose one)
 # plotByRegions(countryDf, subRegions1, subRegions2, category, False) # plot districts
 # plotByRegions(countryDf, subRegions1, subRegions2, category, True) # plot cities
-plotCountryDataByCategories(countryDf, False, allCategories) # plot by category
-annotate(ax, [-80, -85])
+plotCountryDataByCategories(countryDf, True, [category]) # plot by category
+# annotate(ax, [-80, -85])
 
 plt.xlabel('Date')
 plt.ylabel('Change in presence')

@@ -1,6 +1,7 @@
 import pandas as pd
 import datetime as dt
 import matplotlib
+from enum import Enum
 
 from annotations import annotate
 
@@ -11,14 +12,20 @@ import matplotlib.ticker as mtick
 
 useTestsDataInsteadOfTested = True # If this is true, the plots will be based upon total tests and NOT tested individuals (affects tests plot, and positive rate plot)
 
+class MetricToPlot(Enum):
+    TESTS = 1
+    CASES = 2
+    POSITIVE_RATE = 3
+    HOSPITALIZED = 4
+
 # Date formatting for X-axis
 months = mdates.MonthLocator()  # every month
 days = mdates.DayLocator() # every day
 
 # IMPORTANT: before running the script make sure you download the dataset and place in /data:
 if useTestsDataInsteadOfTested:
-    # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_001.csv
-    mohTestsByLoc = pd.read_csv('data/corona_city_table_ver_001.csv')
+    # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_002.csv
+    mohTestsByLoc = pd.read_csv('data/corona_city_table_ver_002.csv')
     mohTestsByLoc = mohTestsByLoc.rename(columns={'Date': 'date', 'City_Name': 'town', 'Cumulative_verified_cases': 'accumulated_cases',
                           'Cumulated_number_of_tests': 'accumulated_tested'})
     israelDataCsv = mohTestsByLoc.filter(
@@ -46,15 +53,26 @@ if not useTestsDataInsteadOfTested:
 
 towns = israelDataCsv['town'].unique()
 
-def getTownsByHighestAccumulatedCases(numOfTownsToSelect):
+def getTownsBy(numOfTownsToSelect, byWhichMetric):
     total = 0
     selectedTowns = []
     for town in towns:
         isCurrentTown = israelDataCsv['town'] == town  # filter only current town
         townData = israelDataCsv[isCurrentTown]
-        accum = townData.accumulated_tested.iloc[-1]
-        total += accum
-        selectedTowns.append((town, accum))
+        if byWhichMetric == 'highestAccumulatedCases':
+            metric = townData['accumulated_tested'].iloc[-1]
+        else:
+            if byWhichMetric == 'highestRecentRiseInPositiveRate':
+                townData.accumulated_cases = townData.accumulated_cases.diff().fillna(0)
+                townData.accumulated_tested = townData.accumulated_tested.diff().fillna(0)
+                townData = groupByWeek(townData)
+                new_cases = townData.accumulated_cases
+                new_tests = townData.accumulated_tested
+                y = (new_cases / new_tests) * 100
+                y = y.diff().fillna(0)
+                metric = y.iloc[-1]
+        total += metric
+        selectedTowns.append((town, metric))
     towns_sorted_by_second = sorted(selectedTowns, key=lambda tup: tup[1])[::-1]
     print ('total tests/tested individuals: {}'.format(total))
     return list(map(lambda x: x[0], towns_sorted_by_second[0:numOfTownsToSelect]))
@@ -133,7 +151,10 @@ def plotByTown(towns, which, shouldGroup):
     plt.ylabel(ylabel)
 
 # Main plots to run: (should choose one)
-townsToShow = getTownsByHighestAccumulatedCases(10)
+townsToShow = getTownsBy(10, 'highestAccumulatedCases')
+# townsToShow = getTownsBy(10, 'highestRecentRiseInPositiveRate')
+# townsToShow = ['ערערה', 'פוריידיס', 'ריינה', "מג'דל שמס", 'באקה אל-גרביה', 'טמרה', 'בסמ""ה', "בועיינה-נוג'ידאת"] # temp list for towns with rising pos rate
+
 # plotByTown(townsToShow, 'cases', False) # plot new cases
 # plotByTown(townsToShow, 'tests', False) # plot new tests
 # plotByTown(townsToShow, 'hospitalized', True) # plot new hospitalized
