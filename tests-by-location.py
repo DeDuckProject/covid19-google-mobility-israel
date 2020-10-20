@@ -12,6 +12,10 @@ import matplotlib.ticker as mtick
 
 useTestsDataInsteadOfTested = True # If this is true, the plots will be based upon total tests and NOT tested individuals (affects tests plot, and positive rate plot)
 
+class MetricToChooseTowns(Enum):
+    HIGHEST_ACCUMULATED_CASES_NOT_NORMALIZED = 1
+    HIGHEST_WEEKLY_INCREASE_IN_POSITIVITY_RATE = 2
+
 class MetricToPlot(Enum):
     TESTS = 1
     CASES = 2
@@ -59,10 +63,10 @@ def getTownsBy(numOfTownsToSelect, byWhichMetric):
     for town in towns:
         isCurrentTown = israelDataCsv['town'] == town  # filter only current town
         townData = israelDataCsv[isCurrentTown]
-        if byWhichMetric == 'highestAccumulatedCases':
+        if byWhichMetric == MetricToChooseTowns.HIGHEST_ACCUMULATED_CASES_NOT_NORMALIZED:
             metric = townData['accumulated_tested'].iloc[-1]
         else:
-            if byWhichMetric == 'highestRecentRiseInPositiveRate':
+            if byWhichMetric == MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_POSITIVITY_RATE:
                 townData.accumulated_cases = townData.accumulated_cases.diff().fillna(0)
                 townData.accumulated_tested = townData.accumulated_tested.diff().fillna(0)
                 townData = groupByWeek(townData)
@@ -98,7 +102,7 @@ def plotByTown(towns, which, shouldGroup):
     else:
         prefix = 'Daily'
         suffix_title = ' - daily'
-    if which == 'tests':
+    if which == MetricToPlot.TESTS:
         column = 'accumulated_tested'
         if useTestsDataInsteadOfTested:
             testString = 'Tests'
@@ -107,12 +111,12 @@ def plotByTown(towns, which, shouldGroup):
         title = '{} per town'.format(testString) + suffix_title
         ylabel = '{} number of {}'.format(prefix, testString)
     else:
-        if which == 'cases':
+        if which == MetricToPlot.CASES:
             column = 'accumulated_cases'
             title = 'Cases per town' + suffix_title
             ylabel = '{} number of cases'.format(prefix)
         else:
-            if which == 'hospitalized':
+            if which == MetricToPlot.HOSPITALIZED:
                 column = 'accumulated_hospitalized'
                 title = 'Hospitalized per town' + suffix_title
                 ylabel = '{} number of hospitalizations'.format(prefix)
@@ -131,7 +135,7 @@ def plotByTown(towns, which, shouldGroup):
         if shouldGroup:
             townData = groupByWeek(townData)
         x = townData.date
-        if which == 'positive-rate':
+        if which == MetricToPlot.POSITIVE_RATE:
             new_cases = townData.accumulated_cases
             new_tests = townData.accumulated_tested
             y = (new_cases / new_tests) * 100
@@ -151,15 +155,15 @@ def plotByTown(towns, which, shouldGroup):
     plt.ylabel(ylabel)
 
 # Main plots to run: (should choose one)
-townsToShow = getTownsBy(10, 'highestAccumulatedCases')
-# townsToShow = getTownsBy(10, 'highestRecentRiseInPositiveRate')
+# townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_ACCUMULATED_CASES_NOT_NORMALIZED)
+townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_POSITIVITY_RATE)
 # townsToShow = ['ערערה', 'פוריידיס', 'ריינה', "מג'דל שמס", 'באקה אל-גרביה', 'טמרה', 'בסמ""ה', "בועיינה-נוג'ידאת"] # temp list for towns with rising pos rate
 
-# plotByTown(townsToShow, 'cases', False) # plot new cases
-# plotByTown(townsToShow, 'tests', False) # plot new tests
-# plotByTown(townsToShow, 'hospitalized', True) # plot new hospitalized
-# plotByTown(townsToShow, 'positive-rate', False) # plot positive rate - daily (very inaccurate)
-plotByTown(townsToShow, 'positive-rate', True) # plot positive rate - weekly
+plotByTown(townsToShow, MetricToPlot.CASES, False) # plot new cases
+# plotByTown(townsToShow, MetricToPlot.TESTS, False) # plot new tests
+# plotByTown(townsToShow, MetricToPlot.HOSPITALIZED, True) # plot new hospitalized
+# plotByTown(townsToShow, MetricToPlot.POSITIVE_RATE, False) # plot positive rate - daily (very inaccurate)
+# plotByTown(townsToShow, MetricToPlot.POSITIVE_RATE, True) # plot positive rate - weekly
 annotate(ax, [10, 10])
 
 plt.xlabel('Date')
