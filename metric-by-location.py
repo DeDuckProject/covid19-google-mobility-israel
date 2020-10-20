@@ -26,6 +26,15 @@ class MetricToPlot(Enum):
 months = mdates.MonthLocator()  # every month
 days = mdates.DayLocator() # every day
 
+# Read population data:
+populationData = pd.read_csv('64edd0ee-3d5d-43ce-8562-c336c24dbc1f.csv', encoding='hebrew')
+populationData = populationData.filter(items=['סמל_ישוב', 'סהכ'])\
+    .rename(columns={'סמל_ישוב': 'City_Code', 'סהכ': 'total_population'})
+
+def getPopulationByCityCode(cityCode):
+    filterByCityCode = populationData['City_Code'] == cityCode
+    return populationData[filterByCityCode].total_population.iloc[0]
+
 # IMPORTANT: before running the script make sure you download the dataset and place in /data:
 if useTestsDataInsteadOfTested:
     # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_002.csv
@@ -33,7 +42,7 @@ if useTestsDataInsteadOfTested:
     mohTestsByLoc = mohTestsByLoc.rename(columns={'Date': 'date', 'City_Name': 'town', 'Cumulative_verified_cases': 'accumulated_cases',
                           'Cumulated_number_of_tests': 'accumulated_tested'})
     israelDataCsv = mohTestsByLoc.filter(
-        items=['date', 'town', 'accumulated_tested', 'accumulated_cases'])
+        items=['date', 'town', 'City_Code', 'accumulated_tested', 'accumulated_cases'])
     israelDataCsv['accumulated_hospitalized'] = 0 # dummy. no hospitalizations here
 else:
     # https://data.gov.il/dataset/f54e79b2-3e6b-4b65-a857-f93e47997d9c/resource/d07c0771-01a8-43b2-96cc-c6154e7fa9bd/download/geographic-summary-per-day-2020-10-14.csv
@@ -57,12 +66,14 @@ if not useTestsDataInsteadOfTested:
 
 towns = israelDataCsv['town'].unique()
 
-def getTownsBy(numOfTownsToSelect, byWhichMetric):
+def getTownsBy(numOfTownsToSelect, byWhichMetric, filterLowerThan=0):
     total = 0
     selectedTowns = []
     for town in towns:
         isCurrentTown = israelDataCsv['town'] == town  # filter only current town
         townData = israelDataCsv[isCurrentTown]
+        if filterLowerThan > getPopulationByCityCode(townData.City_Code.iloc[0]):
+            continue
         if byWhichMetric == MetricToChooseTowns.HIGHEST_ACCUMULATED_CASES_NOT_NORMALIZED:
             metric = townData['accumulated_tested'].iloc[-1]
         else:
@@ -155,8 +166,8 @@ def plotByTown(towns, which, shouldGroup):
     plt.ylabel(ylabel)
 
 # Main plots to run: (should choose one)
-# townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_ACCUMULATED_CASES_NOT_NORMALIZED)
-townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_POSITIVITY_RATE)
+townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_ACCUMULATED_CASES_NOT_NORMALIZED)
+# townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_POSITIVITY_RATE, 10000)
 # townsToShow = ['ערערה', 'פוריידיס', 'ריינה', "מג'דל שמס", 'באקה אל-גרביה', 'טמרה', 'בסמ""ה', "בועיינה-נוג'ידאת"] # temp list for towns with rising pos rate
 
 plotByTown(townsToShow, MetricToPlot.CASES, False) # plot new cases
