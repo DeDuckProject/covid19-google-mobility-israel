@@ -4,6 +4,7 @@ import matplotlib
 from enum import Enum
 
 from annotations import annotate
+from colors import getColorByIndex
 
 matplotlib.use('TkAgg')
 import matplotlib.dates as mdates
@@ -38,8 +39,8 @@ def getPopulationByCityCode(cityCode):
 
 # IMPORTANT: before running the script make sure you download the dataset and place in /data:
 if useTestsDataInsteadOfTested:
-    # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_002.csv
-    mohTestsByLoc = pd.read_csv('data/corona_city_table_ver_002.csv')
+    # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_003.csv
+    mohTestsByLoc = pd.read_csv('data/corona_city_table_ver_003.csv')
     mohTestsByLoc = mohTestsByLoc.rename(columns={'Date': 'date', 'City_Name': 'town', 'Cumulative_verified_cases': 'accumulated_cases',
                           'Cumulated_number_of_tests': 'accumulated_tested'})
     israelDataCsv = mohTestsByLoc.filter(
@@ -169,6 +170,7 @@ def plotByTown(towns, which, shouldGroup=False, shouldNormalize=False):
 
 
 def plotMetricForLocation(locationData, which, column, i, per_capita, shouldGroup, shouldNormalize, locationName, population, plotStyle=''):
+    color = getColorByIndex(i) if plotStyle == '' else '#000000'
     locationData.accumulated_cases = locationData.accumulated_cases.diff().fillna(0)
     locationData.accumulated_tested = locationData.accumulated_tested.diff().fillna(0)
     locationData.accumulated_hospitalized = locationData.accumulated_hospitalized.diff().fillna(0)
@@ -187,9 +189,9 @@ def plotMetricForLocation(locationData, which, column, i, per_capita, shouldGrou
     if not shouldGroup:
         y = y.rolling(window=rollingMeanWindowSize).mean()
     label = locationName[::-1]
-    ax.plot(x, y, plotStyle, label=label, linewidth=1)
+    ax.plot(x, y, plotStyle, label=label, linewidth=1, color=color)
     if shouldGroup:
-        ax.plot(x, y, 'C{}o'.format(i) if plotStyle=='' else 'ko', alpha=0.5)  # plot dots on lines
+        ax.plot(x, y, 'o', alpha=0.5, color=color)  # plot dots on lines
 
 # Main plots to run: (should choose one)
 townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_ACCUMULATED_CASES_NOT_NORMALIZED)

@@ -6,6 +6,7 @@ import matplotlib
 import numpy as np
 
 from annotations import annotate
+from colors import getColorByIndex
 
 matplotlib.use('TkAgg')
 import matplotlib.dates as mdates
@@ -118,6 +119,7 @@ def plotCountryDataByCategories(countryDf, shouldGroupWeek, categories):
     i=0
     # Plot by category
     for cat in categories:
+        color = getColorByIndex(i)
         isNoSubRegion1 = countryDf['sub_region_1'] != countryDf['sub_region_1']  # filter only country non-region data
         countryData = countryDf[isNoSubRegion1]
         if shouldGroupWeek:
@@ -132,9 +134,9 @@ def plotCountryDataByCategories(countryDf, shouldGroupWeek, categories):
             label += ' (time spent at)'
         else:
             label += ' (visitors)'
-        ax.plot(x, y, label=label, linewidth=1)
+        ax.plot(x, y, label=label, linewidth=1, color=color)
         if shouldGroupWeek:
-            ax.plot(x, y, 'C{}o'.format(i), alpha=0.5)  # plot dots on lines
+            ax.plot(x, y, 'C{}o'.format(i), alpha=0.5, color=color)  # plot dots on lines
         i+=1
 
     plt.title('Changes in presence (from baseline) for {}'.format(countryName))
@@ -147,7 +149,7 @@ category = allCategories[2]
 # Main plots to run: (should choose one)
 # plotByRegions(countryDf, subRegions1, subRegions2, category, False) # plot districts
 # plotByRegions(countryDf, subRegions1, subRegions2, category, True) # plot cities
-plotCountryDataByCategories(countryDf, True, [category]) # plot by category
+plotCountryDataByCategories(countryDf, True, allCategories) # plot by category
 # annotate(ax, [-80, -85])
 
 plt.xlabel('Date')
