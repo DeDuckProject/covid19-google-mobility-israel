@@ -115,6 +115,7 @@ def groupByWeek(df):
 
 def plotByTown(towns, which, shouldGroup=False, shouldNormalize=False):
     per_capita = 1000
+    column=''
     if shouldGroup:
         prefix = 'Weekly'
         suffix_title = ' - weekly (for week starting at...)*'
@@ -153,37 +154,48 @@ def plotByTown(towns, which, shouldGroup=False, shouldNormalize=False):
         isCurrentTown = israelDataCsv['town'] == town  # filter only current town
         townData = israelDataCsv[isCurrentTown]
         townTotalPopulation = getPopulationByCityCode(townData.City_Code.iloc[0])
-        townData.accumulated_cases = townData.accumulated_cases.diff().fillna(0)
-        townData.accumulated_tested = townData.accumulated_tested.diff().fillna(0)
-        townData.accumulated_hospitalized = townData.accumulated_hospitalized.diff().fillna(0)
-        if shouldGroup:
-            townData = groupByWeek(townData)
-        x = townData.date
-        if which == MetricToPlot.POSITIVE_RATE:
-            new_cases = townData.accumulated_cases
-            new_tests = townData.accumulated_tested
-            y = (new_cases / new_tests) * 100
-        else:
-            y = townData[column]
-            if shouldNormalize:
-                y = y * (per_capita / townTotalPopulation)
-
-        # rolling average:
-        if not shouldGroup:
-            y = y.rolling(window=rollingMeanWindowSize).mean()
-        label = town[::-1]
-        ax.plot(x, y, label=label, linewidth=1)
-        if shouldGroup:
-            ax.plot(x, y, 'C{}o'.format(i), alpha=0.5) # plot dots on lines
+        plotMetricForLocation(townData, which, column, i, per_capita, shouldGroup, shouldNormalize, town, townTotalPopulation)
         i += 1
+
+    # plt country avg:
+    countryData = israelDataCsv.groupby(['date']).agg(
+        {'accumulated_tested': 'sum', 'accumulated_cases': 'sum', 'accumulated_hospitalized': 'sum'}).reset_index()
+    countryPopulation = populationData['total_population'].sum()
+    plotMetricForLocation(countryData, which, column, i, per_capita, shouldGroup, shouldNormalize, 'ישראל',
+                          countryPopulation, 'k--')
 
     plt.title(title)
     plt.ylabel(ylabel)
+
+
+def plotMetricForLocation(locationData, which, column, i, per_capita, shouldGroup, shouldNormalize, locationName, population, plotStyle=''):
+    locationData.accumulated_cases = locationData.accumulated_cases.diff().fillna(0)
+    locationData.accumulated_tested = locationData.accumulated_tested.diff().fillna(0)
+    locationData.accumulated_hospitalized = locationData.accumulated_hospitalized.diff().fillna(0)
+    if shouldGroup:
+        locationData = groupByWeek(locationData)
+    x = locationData.date
+    if which == MetricToPlot.POSITIVE_RATE:
+        new_cases = locationData.accumulated_cases
+        new_tests = locationData.accumulated_tested
+        y = (new_cases / new_tests) * 100
+    else:
+        y = locationData[column]
+        if shouldNormalize:
+            y = y * (per_capita / population)
+    # rolling average:
+    if not shouldGroup:
+        y = y.rolling(window=rollingMeanWindowSize).mean()
+    label = locationName[::-1]
+    ax.plot(x, y, plotStyle, label=label, linewidth=1)
+    if shouldGroup:
+        ax.plot(x, y, 'C{}o'.format(i) if plotStyle=='' else 'ko', alpha=0.5)  # plot dots on lines
 
 # Main plots to run: (should choose one)
 townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_ACCUMULATED_CASES_NOT_NORMALIZED)
 # townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_POSITIVITY_RATE, 10000)
 # townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_CASES)
+# townsToShow = ['בני ברק', 'מודיעין עילית', 'אלעד', 'ביתר עילית', 'עמנואל'] # temp list to check
 shouldNormalize = True
 
 plotByTown(townsToShow, MetricToPlot.CASES, False, shouldNormalize=shouldNormalize) # plot new cases
