@@ -114,7 +114,7 @@ def groupByWeek(df):
     df = df.groupby([pd.Grouper(key='date', freq='W-SUN')])['accumulated_tested', 'accumulated_cases', 'accumulated_hospitalized'].sum().reset_index().sort_values('date')
     return df
 
-def plotByTown(towns, which, shouldGroup=False, shouldNormalize=False):
+def plotByTown(towns, which, shouldGroup=False, shouldNormalize=False, shouldPlotCountry = True):
     per_capita = 1000
     column=''
     if shouldGroup:
@@ -158,12 +158,13 @@ def plotByTown(towns, which, shouldGroup=False, shouldNormalize=False):
         plotMetricForLocation(townData, which, column, i, per_capita, shouldGroup, shouldNormalize, town, townTotalPopulation)
         i += 1
 
-    # plt country avg:
-    countryData = israelDataCsv.groupby(['date']).agg(
-        {'accumulated_tested': 'sum', 'accumulated_cases': 'sum', 'accumulated_hospitalized': 'sum'}).reset_index()
-    countryPopulation = populationData['total_population'].sum()
-    plotMetricForLocation(countryData, which, column, i, per_capita, shouldGroup, shouldNormalize, 'ישראל',
-                          countryPopulation, 'k--')
+    if shouldPlotCountry:
+        # plt country avg:
+        countryData = israelDataCsv.groupby(['date']).agg(
+            {'accumulated_tested': 'sum', 'accumulated_cases': 'sum', 'accumulated_hospitalized': 'sum'}).reset_index()
+        countryPopulation = populationData['total_population'].sum()
+        plotMetricForLocation(countryData, which, column, i, per_capita, shouldGroup, shouldNormalize, 'ישראל',
+                              countryPopulation, 'k--')
 
     plt.title(title)
     plt.ylabel(ylabel)
@@ -199,12 +200,13 @@ townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_ACCUMULATED_CASES_NOT_N
 # townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_CASES)
 # townsToShow = ['בני ברק', 'מודיעין עילית', 'אלעד', 'ביתר עילית', 'עמנואל'] # temp list to check
 shouldNormalize = True
+shouldPlotCountry = True
 
-plotByTown(townsToShow, MetricToPlot.CASES, False, shouldNormalize=shouldNormalize) # plot new cases
-# plotByTown(townsToShow, MetricToPlot.TESTS, False, shouldNormalize=shouldNormalize) # plot new tests
-# plotByTown(townsToShow, MetricToPlot.HOSPITALIZED, True, shouldNormalize=shouldNormalize) # plot new hospitalized
-# plotByTown(townsToShow, MetricToPlot.POSITIVE_RATE, False) # plot positive rate - daily (very inaccurate)
-# plotByTown(townsToShow, MetricToPlot.POSITIVE_RATE, True) # plot positive rate - weekly
+plotByTown(townsToShow, MetricToPlot.CASES, False, shouldNormalize=shouldNormalize, shouldPlotCountry=shouldPlotCountry) # plot new cases
+# plotByTown(townsToShow, MetricToPlot.TESTS, False, shouldNormalize=shouldNormalize, shouldPlotCountry=shouldPlotCountry) # plot new tests
+# plotByTown(townsToShow, MetricToPlot.HOSPITALIZED, True, shouldNormalize=shouldNormalize, shouldPlotCountry=shouldPlotCountry) # plot new hospitalized
+# plotByTown(townsToShow, MetricToPlot.POSITIVE_RATE, False, shouldPlotCountry=shouldPlotCountry) # plot positive rate - daily (very inaccurate)
+# plotByTown(townsToShow, MetricToPlot.POSITIVE_RATE, True, shouldPlotCountry=shouldPlotCountry) # plot positive rate - weekly
 annotate(ax, [10, 10])
 
 plt.xlabel('Date')
