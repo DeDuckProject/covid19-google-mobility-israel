@@ -150,7 +150,7 @@ category = allCategories[2]
 # plotByRegions(countryDf, subRegions1, subRegions2, category, False) # plot districts
 # plotByRegions(countryDf, subRegions1, subRegions2, category, True) # plot cities
 plotCountryDataByCategories(countryDf, True, allCategories) # plot by category
-# annotate(ax, [-80, -85])
+annotate(ax, [-80, -85])
 
 plt.xlabel('Date')
 plt.ylabel('Change in presence')
@@ -159,7 +159,7 @@ plt.figtext(0.7, 0.1, 'Google LLC "Google COVID-19 Community Mobility Reports".\
 
 # Put a legend to the right of the current axis
 plt.subplots_adjust(right=0.75)
-ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize="x-large")
 
 plt.grid(True)
 fig.autofmt_xdate()

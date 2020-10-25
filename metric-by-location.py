@@ -39,8 +39,8 @@ def getPopulationByCityCode(cityCode):
 
 # IMPORTANT: before running the script make sure you download the dataset and place in /data:
 if useTestsDataInsteadOfTested:
-    # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_003.csv
-    mohTestsByLoc = pd.read_csv('data/corona_city_table_ver_003.csv')
+    # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_004.csv
+    mohTestsByLoc = pd.read_csv('data/corona_city_table_ver_004.csv')
     mohTestsByLoc = mohTestsByLoc.rename(columns={'Date': 'date', 'City_Name': 'town', 'Cumulative_verified_cases': 'accumulated_cases',
                           'Cumulated_number_of_tests': 'accumulated_tested'})
     israelDataCsv = mohTestsByLoc.filter(
@@ -214,7 +214,7 @@ plt.ylim(0)
 
 # Put a legend to the right of the current axis
 plt.subplots_adjust(right=0.75)
-ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize="x-large")
 
 plt.grid(True)
 fig.autofmt_xdate()
