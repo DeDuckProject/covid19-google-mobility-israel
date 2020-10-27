@@ -157,8 +157,6 @@ def plot1st2ndLockdownComparison(countryDf, categories):
     # filtering dates of 1st and 2nd
     countryDfDateOffset = countryDfDateOffset[countryDfDateOffset['date'] < '2021-01-15']
     countryDf = countryDf[countryDf['date'] > '2020-08-01']
-    countryDfDateOffset['date'] = (countryDfDateOffset['date'] - datetime.datetime.strptime('2020-18-10', '%Y-%d-%m')).dt.days
-    countryDf['date'] = (countryDf['date'] - datetime.datetime.strptime('2020-18-10', '%Y-%d-%m')).dt.days
     ax.axvline(x=0, linestyle='solid', alpha=0.8, color='#000000')  # mark 0 point
 
     plotCountryDataByCategories(countryDfDateOffset, False, categories, ' 1st lockdown', i=2, transformDateToDaysFrom='2020-18-10')  # plot by category
