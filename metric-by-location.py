@@ -3,7 +3,7 @@ import datetime as dt
 import matplotlib
 from enum import Enum
 
-from annotations import annotate
+from annotations import annotate, annotateEndLockdown2
 from colors import getColorByIndex
 
 matplotlib.use('TkAgg')
@@ -27,6 +27,10 @@ class MetricToPlot(Enum):
 # Date formatting for X-axis
 months = mdates.MonthLocator()  # every month
 days = mdates.DayLocator() # every day
+
+# global style
+matplotlib.rcParams['axes.titlesize'] = 16
+matplotlib.rcParams['axes.labelsize'] = 12
 
 # Read population data:
 populationData = pd.read_csv('64edd0ee-3d5d-43ce-8562-c336c24dbc1f.csv', encoding='hebrew')
@@ -208,6 +212,7 @@ plotByTown(townsToShow, MetricToPlot.CASES, False, shouldNormalize=shouldNormali
 # plotByTown(townsToShow, MetricToPlot.POSITIVE_RATE, False, shouldPlotCountry=shouldPlotCountry) # plot positive rate - daily (very inaccurate)
 # plotByTown(townsToShow, MetricToPlot.POSITIVE_RATE, True, shouldPlotCountry=shouldPlotCountry) # plot positive rate - weekly
 annotate(ax, [10, 10])
+annotateEndLockdown2(ax, [10, 10])
 
 plt.xlabel('Date')
 plt.ylim(0)
