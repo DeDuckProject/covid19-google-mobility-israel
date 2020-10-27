@@ -1,11 +1,13 @@
 import pandas as pd
+from pandas.tseries.offsets import DateOffset
 import ssl
 import os
 import datetime
 import matplotlib
 import numpy as np
 
-from annotations import annotate
+from annotations import annotate, annotateEndLockdown2
+from colors import getColorByIndex
 
 matplotlib.use('TkAgg')
 import matplotlib.dates as mdates
@@ -19,6 +21,10 @@ shouldRemoveWeekends = True
 months = mdates.MonthLocator()  # every month
 days = mdates.DayLocator() # every day
 
+# global style
+matplotlib.rcParams['axes.titlesize'] = 16
+matplotlib.rcParams['axes.labelsize'] = 12
+
 #fixing ssl issue with url fetching from https
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -31,6 +37,8 @@ google_mobilty_pickle_filename = 'Global_Mobility_Report.pkl'
 
 googleMobilityCsv = pd.read_pickle(google_mobilty_pickle_filename)
 dateFetched = datetime.datetime.fromtimestamp(os.path.getmtime(google_mobilty_pickle_filename)).strftime("%d/%m/%y")
+google_source_text = 'Google LLC "Google COVID-19 Community Mobility Reports".\nhttps://www.google.com/covid19/mobility/ Accessed: {}'.format(
+    dateFetched)
 
 def getCountryData(country):
     #filter data:
@@ -113,31 +121,62 @@ def plotByRegions(countryDf, subRegions1, subRegions2, category, cities):
 
     plt.title('Changes in presence (from baseline) for: ' + category)
 
-def plotCountryDataByCategories(countryDf, shouldGroupWeek, categories):
+def plotCountryDataByCategories(countryDf, shouldGroupWeek, categories, labelOverride = '', i = 0, transformDateToDaysFrom=''):
     countryName = countryDf['country_region'].iloc[0]
-    i=0
     # Plot by category
     for cat in categories:
+        color = getColorByIndex(i)
         isNoSubRegion1 = countryDf['sub_region_1'] != countryDf['sub_region_1']  # filter only country non-region data
         countryData = countryDf[isNoSubRegion1]
         if shouldGroupWeek:
             countryData = groupByWeek(countryData)
+        if transformDateToDaysFrom!='':
+            countryData.date = (countryData.date - datetime.datetime.strptime(transformDateToDaysFrom, '%Y-%d-%m')).dt.days
         x = countryData.date
         y = countryData[cat]
 
         # rolling average:
         y = y.rolling(window=rollingMeanWindowSize).mean()
-        label = '{} - {}'.format(countryName, cat)
+        label = '{}'.format(cat)
         if cat == allCategories[5]:
-            label += ' (time spent at)'
+            label += ' (time)'
         else:
             label += ' (visitors)'
-        ax.plot(x, y, label=label, linewidth=1)
+        label += labelOverride
+        ax.plot(x, y, label=label, linewidth=1, color=color)
         if shouldGroupWeek:
-            ax.plot(x, y, 'C{}o'.format(i), alpha=0.5)  # plot dots on lines
+            ax.plot(x, y, 'C{}o'.format(i), alpha=0.5, color=color)  # plot dots on lines
         i+=1
 
     plt.title('Changes in presence (from baseline) for {}'.format(countryName))
+
+def plot1st2ndLockdownComparison(countryDf, categories):
+    # Compare end of 1st and 2nd lockdowns:
+    countryDfDateOffset = countryDf.copy(deep=True)
+    countryDfDateOffset.date = countryDfDateOffset.date + DateOffset(months=5, days=13) # 1st lockdown ended on 5.5.20. Point of reference: the removal of 100m residential limitation. https://www.calcalist.co.il/local/articles/0,7340,L-3816890,00.html
+    # filtering dates of 1st and 2nd
+    countryDfDateOffset = countryDfDateOffset[countryDfDateOffset['date'] < '2021-01-15']
+    countryDf = countryDf[countryDf['date'] > '2020-08-01']
+    ax.axvline(x=0, linestyle='solid', alpha=0.8, color='#000000')  # mark 0 point
+
+    plotCountryDataByCategories(countryDfDateOffset, False, categories, ' 1st lockdown', i=2, transformDateToDaysFrom='2020-18-10')  # plot by category
+    plotCountryDataByCategories(countryDf, False, categories, ' 2nd lockdown', i=3, transformDateToDaysFrom='2020-18-10')  # plot by category
+
+    plt.xlim(-100, 100)
+    plt.xlabel('Days from lockdown end (ease of leaving-home restriction) - 5.5, 18.10')
+    plt.figtext(0.7, 0.01, google_source_text, ha="center")
+
+def plotRegularTimeline(countryDf, categories, subRegions1, subRegions2, category):
+    # Can choose plot from here as well:
+    # plotByRegions(countryDf, subRegions1, subRegions2, category, False) # plot districts
+    # plotByRegions(countryDf, subRegions1, subRegions2, category, True) # plot cities
+    plotCountryDataByCategories(countryDf, False, categories) # plot by category
+
+    annotate(ax, [-80, -85])
+    annotateEndLockdown2(ax, [-80, -85])
+    plt.xlabel('Date')
+    plt.figtext(0.7, 0.1, google_source_text, ha="center")
+    fig.autofmt_xdate()
 
 # set category to plot here:
 category = allCategories[2]
@@ -145,20 +184,13 @@ category = allCategories[2]
 [countryDf, subRegions1, subRegions2] = getCountryData('Israel')
 
 # Main plots to run: (should choose one)
-# plotByRegions(countryDf, subRegions1, subRegions2, category, False) # plot districts
-# plotByRegions(countryDf, subRegions1, subRegions2, category, True) # plot cities
-plotCountryDataByCategories(countryDf, True, [category]) # plot by category
-# annotate(ax, [-80, -85])
+plotRegularTimeline(countryDf, allCategories, subRegions1, subRegions2, category)
+# plot1st2ndLockdownComparison(countryDf, [allCategories[5]])
 
-plt.xlabel('Date')
 plt.ylabel('Change in presence')
-plt.figtext(0.7, 0.1, 'Google LLC "Google COVID-19 Community Mobility Reports".\nhttps://www.google.com/covid19/mobility/ Accessed: {}'.format(dateFetched), ha="center")
-# plt.ylim(-100, 100)
-
 # Put a legend to the right of the current axis
 plt.subplots_adjust(right=0.75)
-ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize="large")
 
 plt.grid(True)
-fig.autofmt_xdate()
 plt.show()
