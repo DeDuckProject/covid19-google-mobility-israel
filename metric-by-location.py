@@ -1,6 +1,7 @@
 import pandas as pd
 import datetime as dt
 import matplotlib
+import os
 from enum import Enum
 
 from annotations import annotate, annotateEndLockdown2
@@ -44,19 +45,26 @@ def getPopulationByCityCode(cityCode):
 # IMPORTANT: before running the script make sure you download the dataset and place in /data:
 if useTestsDataInsteadOfTested:
     # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_004.csv
-    mohTestsByLoc = pd.read_csv('data/corona_city_table_ver_004.csv')
+    main_csv_filename = 'data/corona_city_table_ver_004.csv'
+    mohTestsByLoc = pd.read_csv(main_csv_filename)
     mohTestsByLoc = mohTestsByLoc.rename(columns={'Date': 'date', 'City_Name': 'town', 'Cumulative_verified_cases': 'accumulated_cases',
                           'Cumulated_number_of_tests': 'accumulated_tested'})
     israelDataCsv = mohTestsByLoc.filter(
         items=['date', 'town', 'City_Code', 'accumulated_tested', 'accumulated_cases'])
     israelDataCsv['accumulated_hospitalized'] = 0 # dummy. no hospitalizations here
 else:
+    # Haven't used this or maintained
     # https://data.gov.il/dataset/f54e79b2-3e6b-4b65-a857-f93e47997d9c/resource/d07c0771-01a8-43b2-96cc-c6154e7fa9bd/download/geographic-summary-per-day-2020-10-14.csv
-    mohTestsByLoc = pd.read_csv('data/geographic-summary-per-day-2020-10-14.csv')
+    main_csv_filename = 'data/geographic-summary-per-day-2020-10-14.csv'
+    mohTestsByLoc = pd.read_csv(main_csv_filename)
     # filter data:
     israelDataCsv = mohTestsByLoc.filter(
         items=['date', 'town', 'town_code', 'agas_code', 'accumulated_tested', 'accumulated_cases',
                'accumulated_hospitalized'])
+
+dateFetched = dt.datetime.fromtimestamp(os.path.getmtime(main_csv_filename)).strftime("%d/%m/%y")
+datagov_source_text = 'Israel covid-19 dataset.\nhttps://data.gov.il/dataset/covid-19 Accessed: {}'.format(
+    dateFetched)
 
 # Get rid of '<15' values:
 israelDataCsv.accumulated_tested = israelDataCsv.accumulated_tested.replace(to_replace=r'^<15$', value='15', regex=True).astype(int)
@@ -216,6 +224,7 @@ annotateEndLockdown2(ax, [10, 10])
 
 plt.xlabel('Date')
 plt.ylim(0)
+plt.figtext(0.7, 0.1, datagov_source_text, ha="center")
 
 # Put a legend to the right of the current axis
 plt.subplots_adjust(right=0.75)
