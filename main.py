@@ -60,7 +60,11 @@ def getCountryData(country):
         countryData['day_of_week'] = countryData['date'].dt.dayofweek
         notSaturday = countryData['day_of_week'] != 5 # Remove sat
         notFriday = countryData['day_of_week'] != 4 # Remove fri
-        countryData = countryData[notFriday & notSaturday]
+        notSunday = countryData['day_of_week'] != 6 # Remove sun if needed
+        if country == 'Israel':
+            countryData = countryData[notFriday & notSaturday]
+        else:
+            countryData = countryData[notSaturday & notSunday]
 
     # filter From date if needed
     # dateFilter = countryData['date'] > '2020-08-15'
@@ -179,7 +183,7 @@ def plotRegularTimeline(countryDf, categories, subRegions1, subRegions2, categor
     fig.autofmt_xdate()
 
 # set category to plot here:
-category = allCategories[2]
+category = allCategories[5]
 
 [countryDf, subRegions1, subRegions2] = getCountryData('Israel')
 
