@@ -29,7 +29,7 @@ matplotlib.rcParams['axes.labelsize'] = 12
 ssl._create_default_https_context = ssl._create_unverified_context
 
 #get new data from google - comment this out to disable downloading every time
-google_mobilty_pickle_filename = 'Global_Mobility_Report.pkl'
+google_mobilty_pickle_filename = 'data/Global_Mobility_Report.pkl'
 # googleMobilityCsv = pd.read_csv('https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv')
 # googleMobilityCsv.to_pickle(google_mobilty_pickle_filename)
 

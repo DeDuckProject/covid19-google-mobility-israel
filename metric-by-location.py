@@ -35,7 +35,7 @@ matplotlib.rcParams['axes.titlesize'] = 16
 matplotlib.rcParams['axes.labelsize'] = 12
 
 # Read population data:
-populationData = pd.read_csv('64edd0ee-3d5d-43ce-8562-c336c24dbc1f.csv', encoding='hebrew')
+populationData = pd.read_csv('data-non-ignore/64edd0ee-3d5d-43ce-8562-c336c24dbc1f.csv', encoding='hebrew')
 populationData = populationData.filter(items=['סמל_ישוב', 'סהכ'])\
     .rename(columns={'סמל_ישוב': 'City_Code', 'סהכ': 'total_population'})
 
@@ -56,7 +56,7 @@ if useTestsDataInsteadOfTested:
 else:
     # Haven't used this or maintained
     # https://data.gov.il/dataset/f54e79b2-3e6b-4b65-a857-f93e47997d9c/resource/d07c0771-01a8-43b2-96cc-c6154e7fa9bd/download/geographic-summary-per-day-2020-10-14.csv
-    main_csv_filename = 'data/geographic-summary-per-day-2020-10-14.csv'
+    main_csv_filename = 'data-non-ignore/geographic-summary-per-day-2020-10-14.csv'
     mohTestsByLoc = pd.read_csv(main_csv_filename)
     # filter data:
     israelDataCsv = mohTestsByLoc.filter(
