@@ -41,12 +41,16 @@ populationData = populationData.filter(items=['סמל_ישוב', 'סהכ'])\
 
 def getPopulationByCityCode(cityCode):
     filterByCityCode = populationData['City_Code'] == cityCode
-    return populationData[filterByCityCode].total_population.iloc[0]
+    population = populationData[filterByCityCode].total_population
+    if (population.size > 0):
+        return population.iloc[0]
+    else:
+        return 1 # Workaround. some town don't have population data
 
 # IMPORTANT: before running the script make sure you download the dataset and place in /data:
 if useTestsDataInsteadOfTested:
-    # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_007.csv
-    main_csv_filename = 'data/corona_city_table_ver_007.csv'
+    # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_008.csv
+    main_csv_filename = 'data/corona_city_table_ver_008.csv'
     mohTestsByLoc = pd.read_csv(main_csv_filename)
     mohTestsByLoc = mohTestsByLoc.rename(columns={'Date': 'date', 'City_Name': 'town', 'Cumulative_verified_cases': 'accumulated_cases',
                           'Cumulated_number_of_tests': 'accumulated_tested'})
