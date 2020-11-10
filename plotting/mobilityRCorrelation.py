@@ -10,6 +10,8 @@ matplotlib.use('TkAgg')
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 
+########### This is work in progress. trying to calculate correlation between R and google mobility stats
+
 # Date formatting for X-axis
 months = mdates.MonthLocator()  # every month
 days = mdates.DayLocator() # every day
