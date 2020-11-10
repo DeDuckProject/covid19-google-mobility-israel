@@ -17,7 +17,8 @@ useTestsDataInsteadOfTested = True # If this is true, the plots will be based up
 class MetricToChooseTowns(Enum):
     HIGHEST_ACCUMULATED_CASES_NOT_NORMALIZED = 1
     HIGHEST_WEEKLY_INCREASE_IN_POSITIVITY_RATE = 2
-    HIGHEST_WEEKLY_INCREASE_IN_CASES = 3
+    HIGHEST_WEEKLY_PCT_CHANGE_IN_POSITIVITY_RATE = 3
+    HIGHEST_WEEKLY_INCREASE_IN_CASES = 4
 
 class MetricToPlot(Enum):
     TESTS = 1
@@ -34,18 +35,22 @@ matplotlib.rcParams['axes.titlesize'] = 16
 matplotlib.rcParams['axes.labelsize'] = 12
 
 # Read population data:
-populationData = pd.read_csv('64edd0ee-3d5d-43ce-8562-c336c24dbc1f.csv', encoding='hebrew')
+populationData = pd.read_csv('data-non-ignore/64edd0ee-3d5d-43ce-8562-c336c24dbc1f.csv', encoding='hebrew')
 populationData = populationData.filter(items=['סמל_ישוב', 'סהכ'])\
     .rename(columns={'סמל_ישוב': 'City_Code', 'סהכ': 'total_population'})
 
 def getPopulationByCityCode(cityCode):
     filterByCityCode = populationData['City_Code'] == cityCode
-    return populationData[filterByCityCode].total_population.iloc[0]
+    population = populationData[filterByCityCode].total_population
+    if (population.size > 0):
+        return population.iloc[0]
+    else:
+        return 1 # Workaround. some town don't have population data
 
 # IMPORTANT: before running the script make sure you download the dataset and place in /data:
 if useTestsDataInsteadOfTested:
-    # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_004.csv
-    main_csv_filename = 'data/corona_city_table_ver_004.csv'
+    # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_008.csv
+    main_csv_filename = 'data/corona_city_table_ver_008.csv'
     mohTestsByLoc = pd.read_csv(main_csv_filename)
     mohTestsByLoc = mohTestsByLoc.rename(columns={'Date': 'date', 'City_Name': 'town', 'Cumulative_verified_cases': 'accumulated_cases',
                           'Cumulated_number_of_tests': 'accumulated_tested'})
@@ -55,7 +60,7 @@ if useTestsDataInsteadOfTested:
 else:
     # Haven't used this or maintained
     # https://data.gov.il/dataset/f54e79b2-3e6b-4b65-a857-f93e47997d9c/resource/d07c0771-01a8-43b2-96cc-c6154e7fa9bd/download/geographic-summary-per-day-2020-10-14.csv
-    main_csv_filename = 'data/geographic-summary-per-day-2020-10-14.csv'
+    main_csv_filename = 'data-non-ignore/geographic-summary-per-day-2020-10-14.csv'
     mohTestsByLoc = pd.read_csv(main_csv_filename)
     # filter data:
     israelDataCsv = mohTestsByLoc.filter(
@@ -91,14 +96,17 @@ def getTownsBy(numOfTownsToSelect, byWhichMetric, filterLowerThan=0):
         if byWhichMetric == MetricToChooseTowns.HIGHEST_ACCUMULATED_CASES_NOT_NORMALIZED:
             metric = townData['accumulated_tested'].iloc[-1]
         else:
-            if byWhichMetric == MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_POSITIVITY_RATE:
+            if (byWhichMetric == MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_POSITIVITY_RATE or byWhichMetric == MetricToChooseTowns.HIGHEST_WEEKLY_PCT_CHANGE_IN_POSITIVITY_RATE):
                 townData.accumulated_cases = townData.accumulated_cases.diff().fillna(0)
                 townData.accumulated_tested = townData.accumulated_tested.diff().fillna(0)
                 townData = groupByWeek(townData)
                 new_cases = townData.accumulated_cases
                 new_tests = townData.accumulated_tested
                 y = (new_cases / new_tests) * 100
-                y = y.diff().fillna(0)
+                if byWhichMetric == MetricToChooseTowns.HIGHEST_WEEKLY_PCT_CHANGE_IN_POSITIVITY_RATE:
+                    y = y.pct_change().fillna(0)
+                else:
+                    y = y.diff().fillna(0)
                 metric = y.iloc[-1]
             else:
                 if byWhichMetric == MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_CASES:
@@ -209,6 +217,7 @@ def plotMetricForLocation(locationData, which, column, i, per_capita, shouldGrou
 # Main plots to run: (should choose one)
 townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_ACCUMULATED_CASES_NOT_NORMALIZED)
 # townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_POSITIVITY_RATE, 10000)
+# townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_WEEKLY_PCT_CHANGE_IN_POSITIVITY_RATE, 10000)
 # townsToShow = getTownsBy(10, MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_CASES)
 # townsToShow = ['בני ברק', 'מודיעין עילית', 'אלעד', 'ביתר עילית', 'עמנואל'] # temp list to check
 shouldNormalize = True
@@ -224,7 +233,7 @@ annotateEndLockdown2(ax, [10, 10])
 
 plt.xlabel('Date')
 plt.ylim(0)
-plt.figtext(0.7, 0.1, datagov_source_text, ha="center")
+plt.figtext(0.2, 0.1, datagov_source_text, ha="center")
 
 # Put a legend to the right of the current axis
 plt.subplots_adjust(right=0.75)
