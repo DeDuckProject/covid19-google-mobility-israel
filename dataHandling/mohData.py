@@ -114,7 +114,12 @@ def getTownsBy(numOfTownsToSelect, byWhichMetric, filterLowerThan=0):
     print ('total tests/tested individuals: {}'.format(total))
     return list(map(lambda x: x[0], towns_sorted_by_second[0:numOfTownsToSelect]))
 
-def groupByWeek(df):
+def groupByWeek(df, noHospitalized = False):
     df['date'] = pd.to_datetime(df['date']) - pd.to_timedelta(7, unit='d')
-    df = df.groupby([pd.Grouper(key='date', freq='W-SUN')])['accumulated_tested', 'accumulated_cases', 'accumulated_hospitalized'].sum().reset_index().sort_values('date')
+    if noHospitalized:
+        df = df.groupby([pd.Grouper(key='date', freq='W-SUN')])[
+            'accumulated_tested', 'accumulated_cases'].sum().reset_index().sort_values(
+            'date')
+    else:
+        df = df.groupby([pd.Grouper(key='date', freq='W-SUN')])['accumulated_tested', 'accumulated_cases', 'accumulated_hospitalized'].sum().reset_index().sort_values('date')
     return df
