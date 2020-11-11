@@ -10,7 +10,7 @@ shouldRemoveWeekends = True
 #fixing ssl issue with url fetching from https
 ssl._create_default_https_context = ssl._create_unverified_context
 
-google_mobilty_pickle_filename = './data/Global_Mobility_Report.pkl'
+google_mobilty_pickle_filename = '../data/Global_Mobility_Report.pkl'
 #get new data from google - uncomment this to enable downloading every time
 # googleMobilityCsv = pd.read_csv('https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv')
 # googleMobilityCsv.to_pickle(google_mobilty_pickle_filename)
