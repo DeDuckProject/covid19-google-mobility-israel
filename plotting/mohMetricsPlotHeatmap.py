@@ -2,11 +2,12 @@ import matplotlib
 import pandas as pd
 import datetime as dt
 import numpy as np
+import joypy
 
 from annotations import annotate, annotateEndLockdown2
 from colors import getColorByIndex, getTrafficLightCmap
 from dataHandling.mohData import MetricToPlot, MetricToChooseTowns, datagov_source_text, useTestsDataInsteadOfTested, \
-    getMohDf, getCompleteTownList, getPopulationByCityCode, populationData, getTownsBy, groupByWeek
+    getMohDf, getCompleteTownList, getPopulationByCityCode, populationData, getTownsBy
 
 matplotlib.use('TkAgg')
 import matplotlib.dates as mdates
@@ -26,6 +27,16 @@ israelDataCsv = getMohDf(False)
 towns = getCompleteTownList()
 
 rollingMeanWindowSize = 7
+
+def groupByWeek(df):
+    df['date'] = pd.to_datetime(df['date']) - pd.to_timedelta(7, unit='d')
+    newDf = df.groupby([pd.Grouper(key='date', freq='W-SUN')])[
+        'accumulated_tested', 'accumulated_cases'].sum().reset_index().sort_values(
+        'date')
+    # df['accumulated_tested'] = newDf['accumulated_tested']
+    # df['accumulated_cases'] = newDf['accumulated_cases']
+    newDf['town'] = df['town'].iloc[0]
+    return newDf
 
 def heatmap(data, row_labels, col_labels, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
@@ -149,38 +160,65 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
 
 fig, ax = plt.subplots()
 
-def plotHeatMap(towns):
+def plotHeatMap(towns, plotJoy=False):
     filterByTowns = israelDataCsv[israelDataCsv['town'].isin(towns)]
     filterByTowns = filterByTowns[filterByTowns['date'] > dt.datetime(2020, 3, 15)]  # Starting from 15.3 since its a sunday, and groupby will work better
     filterByTowns = filterByTowns.filter(
         items=['date', 'town', 'accumulated_tested', 'accumulated_cases'])
+    posPctDf = pd.DataFrame()
     heatMapArray = []
     for town in towns:
         filterByTown = filterByTowns[filterByTowns['town'] == town]
-        filterByTown.accumulated_cases = filterByTown.accumulated_cases.diff().fillna(0)
-        filterByTown.accumulated_tested = filterByTown.accumulated_tested.diff().fillna(0)
-        filterByTown = groupByWeek(filterByTown, True)
+        filterByTown['accumulated_cases'] = filterByTown['accumulated_cases'].diff().fillna(0)
+        filterByTown['accumulated_tested'] = filterByTown['accumulated_tested'].diff().fillna(0)
+        if not plotJoy:
+            filterByTown = groupByWeek(filterByTown)
         listOfDates = filterByTown['date'].unique()
-        new_cases = filterByTown.accumulated_cases
-        new_tests = filterByTown.accumulated_tested
+        new_cases = filterByTown['accumulated_cases']
+        new_tests = filterByTown['accumulated_tested']
         y = (new_cases / new_tests) * 100
-        heatMapArray.append(y.fillna(0).to_numpy())
+        y = y.fillna(0)
+        filterByTown['pct_pos'] = y
+        posPctDf = pd.concat([posPctDf, filterByTown])
+        heatMapArray.append(y.to_numpy())
 
     heatmapNpArray = np.array(heatMapArray)
     townLabels = [(lambda x: x[::-1])(x) for x in towns]
     listOfDates = [(lambda x: pd.to_datetime(str(x)).strftime("%d/%m"))(x) for x in listOfDates]
-    # colorMap = "YlGn"
-    # colorMap = "Wistia"
-    # colorMap = "YlOrRd"
-    colorMap = getTrafficLightCmap()
-    # colorMap = "BuGn"
-    im = heatmap(heatmapNpArray, townLabels, listOfDates, ax=ax,
-                 cmap=colorMap, cbarlabel="pct pos. / tests")
-    texts = annotate_heatmap(im, valfmt="{x:.1f}")
+    if not plotJoy:
+        # colorMap = "YlGn"
+        # colorMap = "Wistia"
+        # colorMap = "YlOrRd"
+        colorMap = getTrafficLightCmap()
+        # colorMap = "BuGn"
+        im = heatmap(heatmapNpArray, townLabels, listOfDates, ax=ax,
+                     cmap=colorMap, cbarlabel="pct pos. / tests")
+        texts = annotate_heatmap(im, valfmt="{x:.1f}")
 
-    fig.tight_layout()
-    plt.title('Positive % by week')
+        fig.tight_layout()
+        plt.title('Positive % by week')
+    else:
+        plotJoyGraph(posPctDf, towns)
     plt.show()
+
+def plotJoyGraph(df, towns, pct=True):
+    # joyDf = israelDataCsv[israelDataCsv['town'].isin(towns)]
+    joyDf = df
+    if pct:
+        column = 'pct_pos'
+        joyDf[column] = joyDf['pct_pos'].clip(0,40)
+    else:
+        column = 'accumulated_cases'
+    joyDf['date'] = (joyDf['date'] - dt.datetime.strptime('2020-10-09', '%Y-%d-%m')).dt.days
+    fig, axes = joypy.joyplot(joyDf, by="town", column=column, ylabels=True, xlabels=False,
+                              grid=False, fill=False, background='k', linecolor="w", linewidth=1,
+                              legend=False, overlap=0.5, figsize=(6, 5), kind="values", bins=80)
+
+    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+
+    for a in axes[:-1]:
+        a.set_xlim([-10, 250])
+    fig.show()
 
 numOfTownsToPlot = 25
 # Main plots to run: (should choose one)
@@ -190,13 +228,5 @@ numOfTownsToPlot = 25
 townsToShow = getTownsBy(numOfTownsToPlot, MetricToChooseTowns.HIGHEST_WEEKLY_INCREASE_IN_CASES)
 
 plotHeatMap(townsToShow)
-# plt.xlabel('Date')
-# plt.ylim(0)
-# plt.figtext(0.2, 0.1, datagov_source_text, ha="center")
-#
-# # Put a legend to the right of the current axis
-# plt.subplots_adjust(right=0.75)
-# ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize="x-large")
-
-# plt.grid(True)
-# fig.autofmt_xdate()
+# Plot Joy:
+# plotHeatMap(getTownsBy(100, MetricToChooseTowns.HIGHEST_ACCUMULATED_CASES_NOT_NORMALIZED), True)

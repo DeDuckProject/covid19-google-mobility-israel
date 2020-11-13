@@ -128,7 +128,7 @@ category = allCategories[5]
 
 # Main plots to run: (should choose one)
 # plotRegularTimeline(countryDf, allCategories, subRegions1, subRegions2, category)
-plot1st2ndLockdownComparison(countryDf, [allCategories[5]])
+plot1st2ndLockdownComparison(countryDf, [category])
 
 plt.ylabel('Change in presence')
 # Put a legend to the right of the current axis
