@@ -209,6 +209,7 @@ def plotJoyGraph(df, towns, pct=True):
         joyDf[column] = joyDf['pct_pos'].clip(0,40)
     else:
         column = 'accumulated_cases'
+    joyDf['town'] = (joyDf.town.apply((lambda x: x[::-1])))
     joyDf['date'] = (joyDf['date'] - dt.datetime.strptime('2020-10-09', '%Y-%d-%m')).dt.days
     fig, axes = joypy.joyplot(joyDf, by="town", column=column, ylabels=True, xlabels=False,
                               grid=False, fill=False, background='k', linecolor="w", linewidth=1,
