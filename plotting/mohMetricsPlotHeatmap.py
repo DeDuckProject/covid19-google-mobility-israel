@@ -197,6 +197,7 @@ def plotHeatMap(towns, plotJoy=False):
 
         fig.tight_layout()
         plt.title('Positive % by week')
+        plt.figtext(0.4, 0.005, datagov_source_text, ha="center")
     else:
         plotJoyGraph(posPctDf, towns)
     plt.show()
