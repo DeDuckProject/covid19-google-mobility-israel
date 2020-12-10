@@ -93,20 +93,35 @@ def plotCountryDataByCategories(countryDf, shouldGroupWeek, categories, labelOve
 
     plt.title('Changes in presence (from baseline) for {}'.format(countryName))
 
-def plot1st2ndLockdownComparison(countryDf, categories):
+def plot1st2ndLockdownComparison(countryDf, categories, compareByStart = False):
     # Compare end of 1st and 2nd lockdowns:
     countryDfDateOffset = countryDf.copy(deep=True)
-    countryDfDateOffset.date = countryDfDateOffset.date + DateOffset(months=5, days=13) # 1st lockdown ended on 5.5.20. Point of reference: the removal of 100m residential limitation. https://www.calcalist.co.il/local/articles/0,7340,L-3816890,00.html
-    # filtering dates of 1st and 2nd
-    countryDfDateOffset = countryDfDateOffset[countryDfDateOffset['date'] < '2021-01-15']
-    countryDf = countryDf[countryDf['date'] > '2020-08-01']
+    if compareByStart:
+        title = 'Days from lockdown start (stay at home orders) - 19.3, 18.9'
+        countryDfDateOffset.date = countryDfDateOffset.date + DateOffset(months=5,
+                                                                         days=30)  # 1st lockdown started on 25.3.20. Point of reference: stay at home orders https://he.wikipedia.org/wiki/%D7%9E%D7%92%D7%A4%D7%AA_%D7%94%D7%A7%D7%95%D7%A8%D7%95%D7%A0%D7%94_%D7%91%D7%99%D7%A9%D7%A8%D7%90%D7%9C#%D7%9E%D7%A8%D7%A5_-_%D7%A1%D7%92%D7%A8_%D7%A8%D7%90%D7%A9%D7%95%D7%9F
+        # filtering dates of 1st and 2nd
+        countryDfDateOffset = countryDfDateOffset[countryDfDateOffset['date'] < '2021-01-15']
+        countryDf = countryDf[countryDf['date'] > '2020-08-01']
+    else:
+        title = 'Days from lockdown end (ease of leaving-home restriction) - 5.5, 18.10'
+        countryDfDateOffset.date = countryDfDateOffset.date + DateOffset(months=5, days=13) # 1st lockdown ended on 5.5.20. Point of reference: the removal of 100m residential limitation. https://www.calcalist.co.il/local/articles/0,7340,L-3816890,00.html
+        # filtering dates of 1st and 2nd
+        countryDfDateOffset = countryDfDateOffset[countryDfDateOffset['date'] < '2021-01-15']
+        countryDf = countryDf[countryDf['date'] > '2020-08-01']
     ax.axvline(x=0, linestyle='solid', alpha=0.8, color='#000000')  # mark 0 point
 
-    plotCountryDataByCategories(countryDfDateOffset, False, categories, ' 1st lockdown', i=2, transformDateToDaysFrom='2020-18-10')  # plot by category
-    plotCountryDataByCategories(countryDf, False, categories, ' 2nd lockdown', i=3, transformDateToDaysFrom='2020-18-10')  # plot by category
+    if compareByStart:
+        plotCountryDataByCategories(countryDfDateOffset, False, categories, ' 1st lockdown', i=2, transformDateToDaysFrom='2020-18-09')  # plot by category
+        plotCountryDataByCategories(countryDf, False, categories, ' 2nd lockdown', i=3, transformDateToDaysFrom='2020-18-09')  # plot by category
+    else:
+        plotCountryDataByCategories(countryDfDateOffset, False, categories, ' 1st lockdown', i=2,
+                                    transformDateToDaysFrom='2020-18-10')  # plot by category
+        plotCountryDataByCategories(countryDf, False, categories, ' 2nd lockdown', i=3,
+                                    transformDateToDaysFrom='2020-18-10')  # plot by category
 
     plt.xlim(-100, 100)
-    plt.xlabel('Days from lockdown end (ease of leaving-home restriction) - 5.5, 18.10')
+    plt.xlabel(title)
     plt.figtext(0.7, 0.01, google_source_text, ha="center")
 
 def plotRegularTimeline(countryDf, categories, subRegions1, subRegions2, category):
@@ -129,6 +144,7 @@ category = allCategories[5]
 # Main plots to run: (should choose one)
 # plotRegularTimeline(countryDf, allCategories, subRegions1, subRegions2, category)
 plot1st2ndLockdownComparison(countryDf, [category])
+# plot1st2ndLockdownComparison(countryDf, [category], True)
 
 plt.ylabel('Change in presence')
 # Put a legend to the right of the current axis
