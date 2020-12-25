@@ -32,8 +32,8 @@ def getPopulationByCityCode(cityCode):
 
 # IMPORTANT: before running the script make sure you download the dataset and place in /data:
 if useTestsDataInsteadOfTested:
-    # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_0020.csv
-    main_csv_filename = '../data/corona_city_table_ver_0020.csv'
+    # https://data.gov.il/dataset/covid-19/resource/8a21d39d-91e3-40db-aca1-f73f7ab1df69/download/corona_city_table_ver_0021.csv
+    main_csv_filename = '../data/corona_city_table_ver_0021.csv'
     mohTestsByLoc = pd.read_csv(main_csv_filename)
     mohTestsByLoc = mohTestsByLoc.rename(columns={'Date': 'date', 'City_Name': 'town', 'Cumulative_verified_cases': 'accumulated_cases',
                           'Cumulated_number_of_tests': 'accumulated_tested'})
