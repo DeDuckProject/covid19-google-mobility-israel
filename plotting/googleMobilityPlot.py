@@ -124,13 +124,14 @@ def plot1st2ndLockdownComparison(countryDf, categories, compareByStart = False):
         plotCountryDataByCategories(countryDfDateOffset1stLockdown, False, categories, ' 1st lockdown', i=2, transformDateToDaysFrom='2020-18-09')
         plotCountryDataByCategories(countryDf, False, categories, ' 2nd lockdown', i=3, transformDateToDaysFrom='2020-18-09')
         plotCountryDataByCategories(countryDfDateOffset3rdLockdown, False, categories, ' 3rd lockdown', i=4, transformDateToDaysFrom='2020-18-09')
+        plt.xlim(-25, 100)
     else:
         plotCountryDataByCategories(countryDfDateOffset1stLockdown, False, categories, ' 1st lockdown', i=2,
                                     transformDateToDaysFrom='2020-18-10')
         plotCountryDataByCategories(countryDf, False, categories, ' 2nd lockdown', i=3,
                                     transformDateToDaysFrom='2020-18-10')
+        plt.xlim(-100, 100)
 
-    plt.xlim(-100, 100)
     plt.xlabel(title)
     plt.figtext(0.7, 0.01, google_source_text, ha="center")
 
