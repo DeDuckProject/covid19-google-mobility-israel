@@ -1,4 +1,5 @@
 import matplotlib
+import numpy as np
 import datetime
 from pandas.tseries.offsets import DateOffset
 
@@ -47,7 +48,10 @@ def plotByRegions(countryDf, subRegions1, subRegions2, category, cities, compari
     y = countryData[category]
     # rolling average:
     y = y.rolling(window=rollingMeanWindowSize).mean()
-    ax.plot(x, y, 'k--', label='{} average'.format(countryName), linewidth=1)
+    if not comparison:
+        ax.plot(x, y, 'k--', label='{} average'.format(countryName), linewidth=1)
+    else:
+        ax.plot(x, y - y, 'k--', label='{} average'.format(countryName), linewidth=1)
 
     if not cities:
         # Plot sub-regions_1 (districts)
@@ -56,19 +60,13 @@ def plotByRegions(countryDf, subRegions1, subRegions2, category, cities, compari
             onlyRegion = countryDf[isRegion]
             isNoSubRegion2 = countryDf['sub_region_2']!=countryDf['sub_region_2'] # remove rows with sub_region_2
             onlyRegion = onlyRegion[isNoSubRegion2]
-            x = onlyRegion.date
-            y = onlyRegion[category]
-
-            # rolling average:
-            y = y.rolling(window=rollingMeanWindowSize).mean()
-            ax.plot(x, y, label=subRegion, linewidth=1)
+            plot_region(category, comparison, countryData, onlyRegion, subRegion)
     else:
         # Plot sub-regions_2 (cities)
         for subRegion in subRegions2:
             isRegion = countryDf['sub_region_2']==subRegion
             onlyRegion = countryDf[isRegion]
-            x = onlyRegion.date
-            y = onlyRegion[category]
+            plot_region(category, comparison, countryData, onlyRegion, subRegion)
 
     title = 'Changes in presence (from baseline) for: ' + category
     if comparison:
@@ -150,6 +148,8 @@ def plotRegularTimeline(countryDf, categories, subRegions1, subRegions2, categor
     # Can choose plot from here as well:
     # plotByRegions(countryDf, subRegions1, subRegions2, category, False) # plot districts
     # plotByRegions(countryDf, subRegions1, subRegions2, category, True) # plot cities
+    # plotByRegions(countryDf, subRegions1, subRegions2, category, False, True)  # plot districts - compare
+    # plotByRegions(countryDf, subRegions1, subRegions2, category, True, True) # plot cities - compare
     plotCountryDataByCategories(countryDf, False, categories) # plot by category
 
     annotate(ax, [-80, -85])
