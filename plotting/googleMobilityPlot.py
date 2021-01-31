@@ -26,7 +26,19 @@ ax.yaxis.set_major_formatter(mtick.PercentFormatter())
 
 rollingMeanWindowSize = 7
 
-def plotByRegions(countryDf, subRegions1, subRegions2, category, cities):
+def plot_region(category, comparison, countryData, onlyRegion, subRegion):
+    x = onlyRegion.date.reset_index(drop=True)
+    if comparison:
+        regionVal = onlyRegion[category].fillna(0).astype(np.int64).reset_index(drop=True)
+        countryVal = countryData[category].fillna(0).astype(np.int64).reset_index(drop=True)
+        y = regionVal - countryVal
+    else:
+        y = onlyRegion[category]
+    # rolling average:
+    y = y.rolling(window=rollingMeanWindowSize).mean()
+    ax.plot(x, y, label=subRegion, linewidth=1)
+
+def plotByRegions(countryDf, subRegions1, subRegions2, category, cities, comparison = False):
     # Plot country avg:
     isNoSubRegion1 = countryDf['sub_region_1']!=countryDf['sub_region_1'] # filter only israel non-region data
     countryData = countryDf[isNoSubRegion1]
@@ -58,11 +70,10 @@ def plotByRegions(countryDf, subRegions1, subRegions2, category, cities):
             x = onlyRegion.date
             y = onlyRegion[category]
 
-            # rolling average:
-            y = y.rolling(window=rollingMeanWindowSize).mean()
-            ax.plot(x, y, label=subRegion, linewidth=1)
-
-    plt.title('Changes in presence (from baseline) for: ' + category)
+    title = 'Changes in presence (from baseline) for: ' + category
+    if comparison:
+        title += ' (difference from country avg.)'
+    plt.title(title)
 
 def plotCountryDataByCategories(countryDf, shouldGroupWeek, categories, labelOverride = '', i = 0, transformDateToDaysFrom=''):
     countryName = countryDf['country_region'].iloc[0]
