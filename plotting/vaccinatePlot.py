@@ -27,9 +27,10 @@ fig, ax = plt.subplots()
 
 rollingMeanWindowSize = 7
 
-def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, firstOrSecond, accum = True, percent = True):
+def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, firstOrSecond, accum = True, percent = True, area = False):
     if percent:
         ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+        plt.ylim(0, 100)
         title = 'Israel - Vaccinated percent from age group'
     else:
         title = 'Israel - Vaccinated individuals by age group'
@@ -41,6 +42,7 @@ def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, first
 
     plt.title(title)
 
+    yStacks = []
     for ageGroup in age_groups:
         onlyAgeGroup = vaccinatedData[vaccinatedData['age_group'] == ageGroup]
         if firstOrSecond==1:
@@ -57,14 +59,22 @@ def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, first
         if percent:
             y = (y / getPopulationForAgeGroup(ageGroup)) * 100
 
-        ax.plot(x, y, label=ageGroup, linewidth=1)
+        if not area:
+            ax.plot(x, y, label=ageGroup, linewidth=1)
+        yStacks.append(y)
+
+    if area:
+        ax.stackplot(x, yStacks, labels=age_groups)
     plt.xlabel('Date')
     plt.ylabel('Vaccinated for age group')
 
 [vaccinatedData, age_groups] = getVaccinatedData()
 
-plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, False, True)
-# plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, False)
+plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, True, True, False)
+# plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, True, True, False)
+
+# plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, False, False, True)
+# plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, False, False, True)
 
 # Put a legend to the right of the current axis
 plt.subplots_adjust(right=0.75)
