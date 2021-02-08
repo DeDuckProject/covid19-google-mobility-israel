@@ -1,10 +1,7 @@
 import matplotlib
-import numpy as np
-import datetime
 from pandas.tseries.offsets import DateOffset
-
-from annotations import annotateEndLockdown2, annotate
-from colors import getColorByIndex
+from matplotlib import cm
+from colors import getColorForAge
 from dataHandling.vaccinatedData import getVaccinatedData, getPopulationForAgeGroup, datagov_source_text_vaccinated
 
 matplotlib.use('TkAgg')
@@ -21,13 +18,10 @@ matplotlib.rcParams['axes.titlesize'] = 16
 matplotlib.rcParams['axes.labelsize'] = 12
 
 fig, ax = plt.subplots()
-# ax.xaxis.set_major_locator(months)
-# ax.xaxis.set_minor_locator(days)
-# ax.yaxis.set_major_formatter(mtick.PercentFormatter())
 
 rollingMeanWindowSize = 7
 
-def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, firstOrSecond, accum = True, percent = True, area = False):
+def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, firstOrSecond, accum = True, percent = True, area = False, offset = False):
     if percent:
         ax.yaxis.set_major_formatter(mtick.PercentFormatter())
         plt.ylim(0, 100)
@@ -43,12 +37,22 @@ def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, first
     plt.title(title)
 
     yStacks = []
+    i=0
     for ageGroup in age_groups:
         onlyAgeGroup = vaccinatedData[vaccinatedData['age_group'] == ageGroup]
+        if (offset):
+            onlyAgeGroup.date = onlyAgeGroup.date + DateOffset(days=-21)
+            lineStyle = 'dashed'
+        else:
+            lineStyle = 'solid'
+
         if firstOrSecond==1:
             key = 'first_dose'
         else:
             key = 'second_dose'
+
+        label = "{} ({})".format(ageGroup, key)
+
         if (accum):
             onlyAgeGroup['first_dose_accum'] = onlyAgeGroup['first_dose'].cumsum()
             onlyAgeGroup['second_dose_accum'] = onlyAgeGroup['second_dose'].cumsum()
@@ -59,22 +63,37 @@ def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, first
         if percent:
             y = (y / getPopulationForAgeGroup(ageGroup)) * 100
 
+
         if not area:
-            ax.plot(x, y, label=ageGroup, linewidth=1)
+            ax.plot(x, y, label=label, linewidth=1.5, color=getColorForAge(i), linestyle=lineStyle)
         yStacks.append(y)
+        i+=1
 
     if area:
         ax.stackplot(x, yStacks, labels=age_groups)
     plt.xlabel('Date')
     plt.ylabel('Vaccinated for age group')
 
-[vaccinatedData, age_groups] = getVaccinatedData()
+def plot_both_doses():
+    plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, True, True, False)
+    plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, True, True, False, True)
+    plt.title('Israel - Vaccinated percent from age group (both doses)')
 
-plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, True, True, False)
-# plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, True, True, False)
+def plot_one_dose():
+    plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, True, True, False)
+    # plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, True, True, False)
+
+def plot_area_graphs():
+    plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, False, False, True)
+    # plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, False, False, True)
+[vaccinatedData, age_groups] = getVaccinatedData()
 
 # plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, False, False, True)
 # plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, False, False, True)
+
+# plot_one_dose()
+plot_both_doses()
+# plot_area_graphs()
 
 # Put a legend to the right of the current axis
 plt.subplots_adjust(right=0.75)

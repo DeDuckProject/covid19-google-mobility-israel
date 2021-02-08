@@ -1,5 +1,6 @@
 import matplotlib._color_data as mcd
 import matplotlib.colors as mcolors
+import matplotlib.cm as cm
 import numpy as np
 
 cssColors = mcd.CSS4_COLORS
@@ -12,6 +13,8 @@ def getColorByIndex(n):
     else:
         return colors[n]
 
+def getColorForAge(n):
+    return cm.get_cmap('spring')(n/9)
 
 # Creating custom cmap:
 def hex_to_rgb(value):
