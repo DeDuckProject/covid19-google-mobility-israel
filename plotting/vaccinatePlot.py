@@ -21,7 +21,7 @@ fig, ax = plt.subplots()
 
 rollingMeanWindowSize = 7
 
-def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, firstOrSecond, accum = True, percent = True, area = False, offset = False):
+def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, firstOrSecond, accum = True, percent = True, area = False, offset = False, gradient = False, rollingAverage = False):
     if percent:
         ax.yaxis.set_major_formatter(mtick.PercentFormatter())
         plt.ylim(0, 100)
@@ -54,16 +54,17 @@ def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, first
         label = "{} ({})".format(ageGroup, key)
 
         if (accum):
-            onlyAgeGroup['first_dose_accum'] = onlyAgeGroup['first_dose'].cumsum()
-            onlyAgeGroup['second_dose_accum'] = onlyAgeGroup['second_dose'].cumsum()
-            key += '_accum'
+            onlyAgeGroup[key] = onlyAgeGroup[key].cumsum()
+        if (gradient):
+            onlyAgeGroup[key] = onlyAgeGroup[key].diff().fillna(0)
 
         x = onlyAgeGroup['date']
         y = onlyAgeGroup[key]
         if percent:
             y = (y / getPopulationForAgeGroup(ageGroup)) * 100
 
-
+        if (rollingAverage):
+            y = y.rolling(window=rollingMeanWindowSize).mean()
         if not area:
             ax.plot(x, y, label=label, linewidth=1.5, color=getColorForAge(i), linestyle=lineStyle)
         yStacks.append(y)
@@ -80,8 +81,12 @@ def plot_both_doses():
     plt.title('Israel - Vaccinated percent from age group (both doses)')
 
 def plot_one_dose():
-    plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, True, True, False)
-    # plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, True, True, False)
+    plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1)
+    # plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2)
+
+def plot_one_dose_gradient():
+    plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, accum=False, percent=False, rollingAverage=True, gradient=True)
+    # plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, accum=False, percent=False, rollingAverage=True)
 
 def plot_area_graphs():
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, False, False, True)
@@ -93,6 +98,7 @@ def plot_area_graphs():
 
 # plot_one_dose()
 plot_both_doses()
+# plot_one_dose_gradient()
 # plot_area_graphs()
 
 # Put a legend to the right of the current axis
