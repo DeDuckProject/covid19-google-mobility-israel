@@ -54,14 +54,21 @@ def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, first
         label = "{} ({})".format(ageGroup, key)
 
         if (accum):
-            onlyAgeGroup[key] = onlyAgeGroup[key].cumsum()
+            onlyAgeGroup['first_dose'] = onlyAgeGroup['first_dose'].cumsum()
+            onlyAgeGroup['second_dose'] = onlyAgeGroup['second_dose'].cumsum()
         if (gradient):
-            onlyAgeGroup[key] = onlyAgeGroup[key].diff().fillna(0)
+            onlyAgeGroup['first_dose'] = onlyAgeGroup['first_dose'].diff().fillna(0)
+            onlyAgeGroup['second_dose'] = onlyAgeGroup['second_dose'].diff().fillna(0)
 
         x = onlyAgeGroup['date']
         y = onlyAgeGroup[key]
-        if percent:
-            y = (y / getPopulationForAgeGroup(ageGroup)) * 100
+        if (firstOrSecond == 'both'):
+            onlyAgeGroup['second_dose'] = onlyAgeGroup['second_dose'].shift(-21)
+            y = (onlyAgeGroup['second_dose'] / onlyAgeGroup['first_dose']) * 100
+            label=ageGroup
+        else:
+            if percent:
+                y = (y / getPopulationForAgeGroup(ageGroup)) * 100
 
         if (rollingAverage):
             y = y.rolling(window=rollingMeanWindowSize).mean()
@@ -79,6 +86,10 @@ def plot_both_doses():
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, True, True, False)
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, True, True, False, True)
     plt.title('Israel - Vaccinated percent from age group (both doses)')
+
+def plot_both_doses_diff():
+    plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 'both')
+    plt.title('Israel - percent taken 2nd dose')
 
 def plot_one_dose():
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1)
@@ -98,6 +109,7 @@ def plot_area_graphs():
 
 # plot_one_dose()
 plot_both_doses()
+# plot_both_doses_diff()
 # plot_one_dose_gradient()
 # plot_area_graphs()
 
