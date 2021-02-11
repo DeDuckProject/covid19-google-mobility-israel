@@ -14,7 +14,7 @@ def getColorByIndex(n):
         return colors[n]
 
 def getColorForAge(n):
-    return cm.get_cmap('spring')(n/9)
+    return cm.get_cmap('spring')(n/8)
 
 # Creating custom cmap:
 def hex_to_rgb(value):

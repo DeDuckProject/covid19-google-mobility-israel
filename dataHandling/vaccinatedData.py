@@ -27,5 +27,8 @@ popForAgeThousand = [3263.9, 1267.5, 1179.6, 1068.8, 824.4, 729.5, 450.5, 219.6,
 def getPopulationForAgeGroup(age_group):
     return popForAgeThousand[age_groups.index(age_group)] * 1000
 
+def getTotalPopulation():
+    return sum(popForAgeThousand) * 1000
+
 def getVaccinatedData():
     return [israelVaccinatedData, age_groups]
