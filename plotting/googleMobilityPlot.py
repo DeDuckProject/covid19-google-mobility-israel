@@ -5,7 +5,9 @@ from pandas.tseries.offsets import DateOffset
 
 from annotations import annotateEndLockdown2, annotate
 from colors import getColorByIndex
-from dataHandling.googleMobilityData import getCountryData, allCategories, groupByWeek, google_source_text
+from dataHandling.googleMobilityData import getCountryData, allCategories, groupByWeek, google_source_text, signature
+from dataHandling.lockdownInfo import lockdownStartDaysText, lockdownEndDaysText, getLockdownShiftInDays, \
+    getLockdownLengthInDays
 
 matplotlib.use('TkAgg')
 import matplotlib.dates as mdates
@@ -95,32 +97,26 @@ def plotCountryDataByCategories(countryDf, shouldGroupWeek, categories, labelOve
         else:
             label += ' (visitors)'
         label += labelOverride
-        ax.plot(x, y, label=label, linewidth=1, color=color)
+        ax.plot(x, y, label=label, linewidth=1.5, color=color)
+        # ax.fill_between(x, 0, y, color=color, alpha=0.2, where=[x<getLockdownLengthInDays(i-2)])
         if shouldGroupWeek:
             ax.plot(x, y, 'C{}o'.format(i), alpha=0.5, color=color)  # plot dots on lines
         i+=1
 
     plt.title('Changes in presence (from baseline) for {}'.format(countryName))
 
-def plot1st2ndLockdownComparison(countryDf, categories, compareByStart = False):
+def plot1st2ndLockdownComparison(countryDf, categories, compareByStart = False, shouldGroupWeek=False):
     # Compare end of 1st and 2nd lockdowns:
     countryDfDateOffset1stLockdown = countryDf.copy(deep=True)
     countryDfDateOffset3rdLockdown = countryDf.copy(deep=True)
     if compareByStart:
-        title = 'Days from lockdown start (stay at home orders) - 22.3, 18.9, 27.12'
-        countryDfDateOffset1stLockdown.date = countryDfDateOffset1stLockdown.date + DateOffset(months=5,
-                                                                         days=27)  # 1st lockdown started on 22.3.20. Point of reference: stay at home orders https://he.wikipedia.org/wiki/%D7%9E%D7%92%D7%A4%D7%AA_%D7%94%D7%A7%D7%95%D7%A8%D7%95%D7%A0%D7%94_%D7%91%D7%99%D7%A9%D7%A8%D7%90%D7%9C#%D7%9E%D7%A8%D7%A5_-_%D7%A1%D7%92%D7%A8_%D7%A8%D7%90%D7%A9%D7%95%D7%9F
-        countryDfDateOffset3rdLockdown.date = countryDfDateOffset3rdLockdown.date + DateOffset(months=-3,
-                                                                           days=-9)  # 3rd lockdown started on 27.12.20. Point of reference: stay at home orders
-
-        # sloped are aligned:
-        # countryDfDateOffset1stLockdown.date = countryDfDateOffset1stLockdown.date + DateOffset(months=6,
-        #                                                                                        days=3)  # 1st lockdown started on 22.3.20. Point of reference: stay at home orders https://he.wikipedia.org/wiki/%D7%9E%D7%92%D7%A4%D7%AA_%D7%94%D7%A7%D7%95%D7%A8%D7%95%D7%A0%D7%94_%D7%91%D7%99%D7%A9%D7%A8%D7%90%D7%9C#%D7%9E%D7%A8%D7%A5_-_%D7%A1%D7%92%D7%A8_%D7%A8%D7%90%D7%A9%D7%95%D7%9F
-        # countryDfDateOffset3rdLockdown.date = countryDfDateOffset3rdLockdown.date + DateOffset(months=-3,
-        #                                                                                        days=-7)  # 3rd lockdown started on 27.12.20. Point of reference: stay at home orders
+        title = 'Days from lockdown start (stay at home orders) - %s' % lockdownStartDaysText
+        offsets = [getLockdownShiftInDays(1, 0, 'start'),-getLockdownShiftInDays(2, 1, 'start')]
     else:
-        title = 'Days from lockdown end (ease of leaving-home restriction) - 5.5, 18.10'
-        countryDfDateOffset1stLockdown.date = countryDfDateOffset1stLockdown.date + DateOffset(months=5, days=13) # 1st lockdown ended on 5.5.20. Point of reference: the removal of 100m residential limitation. https://www.calcalist.co.il/local/articles/0,7340,L-3816890,00.html
+        title = 'Days from lockdown end (ease of leaving-home restriction) - %s' % lockdownEndDaysText
+        offsets = [getLockdownShiftInDays(1, 0, 'end'), -getLockdownShiftInDays(2, 1, 'end')]
+    countryDfDateOffset1stLockdown.date = countryDfDateOffset1stLockdown.date + DateOffset(days=offsets[0])
+    countryDfDateOffset3rdLockdown.date = countryDfDateOffset3rdLockdown.date + DateOffset(days=offsets[1])
 
     # filtering dates of 1st and 2nd
     countryDfDateOffset3rdLockdown = countryDfDateOffset3rdLockdown[countryDfDateOffset3rdLockdown['date'] > '2020-08-01']
@@ -130,19 +126,38 @@ def plot1st2ndLockdownComparison(countryDf, categories, compareByStart = False):
     ax.axvline(x=0, linestyle='solid', alpha=0.8, color='#000000')  # mark 0 point
 
     if compareByStart:
-        plotCountryDataByCategories(countryDfDateOffset1stLockdown, False, categories, ' 1st lockdown', i=2, transformDateToDaysFrom='2020-18-09')
-        plotCountryDataByCategories(countryDf, False, categories, ' 2nd lockdown', i=3, transformDateToDaysFrom='2020-18-09')
-        plotCountryDataByCategories(countryDfDateOffset3rdLockdown, False, categories, ' 3rd lockdown', i=4, transformDateToDaysFrom='2020-18-09')
+        plotCountryDataByCategories(countryDfDateOffset1stLockdown, shouldGroupWeek, categories, ' 1st lockdown', i=2, transformDateToDaysFrom='2020-18-09')
+        plotCountryDataByCategories(countryDf, shouldGroupWeek, categories, ' 2nd lockdown', i=3, transformDateToDaysFrom='2020-18-09')
+        plotCountryDataByCategories(countryDfDateOffset3rdLockdown, shouldGroupWeek, categories, ' 3rd lockdown', i=4, transformDateToDaysFrom='2020-18-09')
+
         plt.xlim(-25, 100)
     else:
-        plotCountryDataByCategories(countryDfDateOffset1stLockdown, False, categories, ' 1st lockdown', i=2,
+        plotCountryDataByCategories(countryDfDateOffset1stLockdown, shouldGroupWeek, categories, ' 1st lockdown', i=2,
                                     transformDateToDaysFrom='2020-18-10')
-        plotCountryDataByCategories(countryDf, False, categories, ' 2nd lockdown', i=3,
+        plotCountryDataByCategories(countryDf, shouldGroupWeek, categories, ' 2nd lockdown', i=3,
+                                    transformDateToDaysFrom='2020-18-10')
+        plotCountryDataByCategories(countryDfDateOffset3rdLockdown, shouldGroupWeek, categories, ' 3rd lockdown', i=4,
                                     transformDateToDaysFrom='2020-18-10')
         plt.xlim(-100, 100)
 
+    drawLockdownLength(compareByStart)
     plt.xlabel(title)
     plt.figtext(0.7, 0.01, google_source_text, ha="center")
+    # plt.figtext(0.2, 0.01, signature, ha="center")
+
+
+def drawLockdownLength(compareByStart):
+    if not compareByStart:
+        multiply = -1
+    else:
+        multiply = 1
+    ax.axvline(x=multiply*getLockdownLengthInDays(0), linestyle='dashed', alpha=0.5,
+               color=getColorByIndex(2))  # mark 1st lockdown
+    ax.axvline(x=multiply*getLockdownLengthInDays(1), linestyle='dashed', alpha=0.5,
+               color=getColorByIndex(3))  # mark 2nd lockdown
+    ax.axvline(x=multiply*getLockdownLengthInDays(2), linestyle='dashed', alpha=0.5,
+               color=getColorByIndex(4))  # mark 3rd lockdown
+
 
 def plotRegularTimeline(countryDf, categories, subRegions1, subRegions2, category):
     # Can choose plot from here as well:
@@ -156,6 +171,7 @@ def plotRegularTimeline(countryDf, categories, subRegions1, subRegions2, categor
     annotateEndLockdown2(ax, [-80, -85])
     plt.xlabel('Date')
     plt.figtext(0.7, 0.1, google_source_text, ha="center")
+    # plt.figtext(0.6, 0.5, signature, ha="center")
     fig.autofmt_xdate()
 
 # set category to plot here:

@@ -20,6 +20,8 @@ dateFetched = datetime.datetime.fromtimestamp(os.path.getmtime(google_mobilty_pi
 google_source_text = 'Google LLC "Google COVID-19 Community Mobility Reports".\nhttps://www.google.com/covid19/mobility/ Accessed: {}'.format(
     dateFetched)
 
+signature = '@De_Duck_Tweets'
+
 def getCountryData(country):
     #filter data:
     isCountryFilter = googleMobilityCsv['country_region']==country # filter only country
