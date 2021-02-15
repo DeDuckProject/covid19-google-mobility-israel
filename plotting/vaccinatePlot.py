@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from annotations import annotateVaccines
 from colors import getColorForAge
+from dataHandling.googleMobilityData import signature
 from dataHandling.vaccinatedData import getVaccinatedData, getPopulationForAgeGroup, datagov_source_text_vaccinated, \
     getTotalPopulation
 
@@ -107,6 +108,13 @@ def plot_both_doses():
     plt.title('Israel - Vaccinated percent from age group (both doses)')
     annotateVaccines(ax, [95, 5])
 
+def plot_both_doses_absolute():
+    # age_groups.append('all')
+    plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, True, False, False)
+    plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, True, False, False, True)
+    plt.title('Israel - Vaccinated individuals by age group (both doses)')
+    annotateVaccines(ax, [95, 5])
+
 def plot_both_doses_diff():
     age_groups.append('all')
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 'both')
@@ -127,7 +135,7 @@ def plot_one_dose_gradient():
 def plot_area_graphs():
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, False, False, True)
     # plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, False, False, True)
-    annotateVaccines(ax, [150000, 5])
+    # annotateVaccines(ax, [150000, 5])
 [vaccinatedData, age_groups] = getVaccinatedData()
 
 # plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, False, False, True)
@@ -135,6 +143,7 @@ def plot_area_graphs():
 
 # plot_one_dose()
 plot_both_doses()
+# plot_both_doses_absolute()
 # plot_both_doses_diff()
 # plot_one_dose_gradient()
 # plot_area_graphs()
@@ -143,6 +152,7 @@ plot_both_doses()
 plt.subplots_adjust(right=0.75)
 ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize="large")
 plt.figtext(0.2, 0.05, datagov_source_text_vaccinated, ha="center")
+# plt.figtext(0.7, 0.05, signature, ha="center")
 
 plt.grid(True)
 plt.show()
