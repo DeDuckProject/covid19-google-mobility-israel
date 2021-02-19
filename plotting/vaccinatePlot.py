@@ -50,20 +50,20 @@ def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, first
             onlyAgeGroup = vaccinatedData.groupby([pd.Grouper(key='date', freq='D')])[
                 'first_dose', 'second_dose'].sum().reset_index().sort_values(
                 'date')
-            # onlyAgeGroup = vaccinatedData[vaccinatedData['age_group'] == ageGroup]
         else:
             onlyAgeGroup = vaccinatedData[vaccinatedData['age_group'] == ageGroup]
         if (offset):
             onlyAgeGroup['date'] = onlyAgeGroup['date'] + DateOffset(days=-21)
             onlyAgeGroup = onlyAgeGroup.iloc[21:]
-            lineStyle = 'dashed'
-        else:
-            lineStyle = 'solid'
 
         if firstOrSecond==1:
             key = 'first_dose'
+            lineStyle = 'solid'
         else:
             key = 'second_dose'
+            lineStyle = 'dashed'
+        if firstOrSecond=='both':
+            lineStyle = 'solid'
 
         label = "{} ({})".format(ageGroup, key)
 
@@ -151,7 +151,7 @@ plot_both_doses()
 # Put a legend to the right of the current axis
 plt.subplots_adjust(right=0.75)
 ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize="large")
-plt.figtext(0.2, 0.05, datagov_source_text_vaccinated, ha="center")
+plt.figtext(0.2, 0.04, datagov_source_text_vaccinated, ha="center")
 # plt.figtext(0.7, 0.05, signature, ha="center")
 
 plt.grid(True)
