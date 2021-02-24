@@ -6,7 +6,7 @@ from annotations import annotateVaccines
 from colors import getColorForAge
 from dataHandling.googleMobilityData import signature
 from dataHandling.vaccinatedData import getVaccinatedData, getPopulationForAgeGroup, datagov_source_text_vaccinated, \
-    getTotalPopulation
+    getTotalPopulation, populationFrom2019
 
 matplotlib.use('TkAgg')
 import matplotlib.dates as mdates
@@ -26,11 +26,11 @@ fig, ax = plt.subplots()
 
 rollingMeanWindowSize = 7
 
-def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, firstOrSecond, accum = True, percent = True, area = False, offset = False, gradient = False, rollingAverage = False):
+def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, firstOrSecond, accum = True, percent = True, area = False, offset = False, gradient = False, rollingAverage = False, dontIncludeCantVaccinate = True):
     if percent:
         ax.yaxis.set_major_formatter(mtick.PercentFormatter())
         plt.ylim(0, 100)
-        title = 'Israel - Vaccinated percent from age group'
+        title = 'Israel - Vaccinated percent of age group'
     else:
         title = 'Israel - Vaccinated individuals by age group'
 
@@ -46,12 +46,24 @@ def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, first
     for ageGroup in age_groups:
         def is_all_group():
             return ageGroup=='all'
-        if is_all_group():
-            onlyAgeGroup = vaccinatedData.groupby([pd.Grouper(key='date', freq='D')])[
+        def is80plusGroup():
+            return ageGroup=='80+'
+        def is_16_to_19():
+            return ageGroup=='16-19'
+
+        onlyAgeGroup = vaccinatedData[vaccinatedData['age_group'] == ageGroup]
+
+        if is_16_to_19():
+            onlyAgeGroup = vaccinatedData[vaccinatedData['age_group'] == '0-19']
+
+        if is_all_group() or is80plusGroup():
+            filteredVaccinedData = vaccinatedData
+            if is80plusGroup():
+                filteredVaccinedData = vaccinatedData[vaccinatedData['age_group'].isin(['80-89','90+'])]
+            onlyAgeGroup = filteredVaccinedData.groupby([pd.Grouper(key='date', freq='D')])[
                 'first_dose', 'second_dose'].sum().reset_index().sort_values(
                 'date')
-        else:
-            onlyAgeGroup = vaccinatedData[vaccinatedData['age_group'] == ageGroup]
+
         if (offset):
             onlyAgeGroup['date'] = onlyAgeGroup['date'] + DateOffset(days=-21)
             onlyAgeGroup = onlyAgeGroup.iloc[21:]
@@ -65,7 +77,10 @@ def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, first
         if firstOrSecond=='both':
             lineStyle = 'solid'
 
-        label = "{} ({})".format(ageGroup, key)
+        ageGroupLabel = ageGroup
+        if dontIncludeCantVaccinate and is_all_group():
+            ageGroupLabel = "all - 16+"
+        label = "{} ({})".format(ageGroupLabel, key)
 
         if (accum):
             onlyAgeGroup['first_dose'] = onlyAgeGroup['first_dose'].cumsum()
@@ -85,7 +100,7 @@ def plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, first
                 if is_all_group():
                     y = (y / getTotalPopulation()) * 100
                 else:
-                    y = (y / getPopulationForAgeGroup(ageGroup)) * 100
+                    y = (y / getPopulationForAgeGroup(ageGroup, dontIncludeCantVaccinate)) * 100
 
         if (rollingAverage):
             y = y.rolling(window=rollingMeanWindowSize).mean()
@@ -105,7 +120,8 @@ def plot_both_doses():
     age_groups.append('all')
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, True, True, False)
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, True, True, False, True)
-    plt.title('Israel - Vaccinated percent from age group (both doses)')
+    plt.title('Israel - Vaccinated percent of age group (both doses)')
+    plt.ylabel('Accumulated percent')
     annotateVaccines(ax, [95, 5])
 
 def plot_both_doses_absolute():
@@ -113,12 +129,14 @@ def plot_both_doses_absolute():
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, True, False, False)
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, True, False, False, True)
     plt.title('Israel - Vaccinated individuals by age group (both doses)')
-    annotateVaccines(ax, [95, 5])
+    plt.ylabel('Accumulated - absolute')
+    # annotateVaccines(ax, [95, 5])
 
 def plot_both_doses_diff():
     age_groups.append('all')
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 'both')
     plt.title('Israel - percent taken 2nd dose')
+    plt.ylabel('Percent')
 
 def plot_one_dose():
     age_groups.append('all')
@@ -128,18 +146,17 @@ def plot_one_dose():
 
 def plot_one_dose_gradient():
     age_groups.append('all')
-    plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, accum=False, percent=False, rollingAverage=True, gradient=True)
+    plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, accum=False, percent=False, rollingAverage=True, gradient=False)
     # plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, accum=False, percent=False, rollingAverage=True)
-    annotateVaccines(ax, [15000, 5])
+    plt.ylabel('Daily vaccinated')
+    # annotateVaccines(ax, [15000, 5])
 
 def plot_area_graphs():
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, False, False, True)
     # plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, False, False, True)
     # annotateVaccines(ax, [150000, 5])
+    plt.ylabel('Daily vaccinated')
 [vaccinatedData, age_groups] = getVaccinatedData()
-
-# plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, False, False, True)
-# plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, False, False, True)
 
 # plot_one_dose()
 plot_both_doses()
