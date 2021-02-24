@@ -120,7 +120,7 @@ def plot_both_doses():
     age_groups.append('all')
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, True, True, False)
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, True, True, False, True)
-    plt.title('Israel - Vaccinated percent of age group (both doses)')
+    plt.title('Israel - Vaccinated percent of age group (both doses - 2nd dose offset by -21 days)')
     plt.ylabel('Accumulated percent')
     annotateVaccines(ax, [95, 5])
 
@@ -128,7 +128,7 @@ def plot_both_doses_absolute():
     # age_groups.append('all')
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 1, True, False, False)
     plot_vaccinated_accumulation_per_age_group(vaccinatedData, age_groups, 2, True, False, False, True)
-    plt.title('Israel - Vaccinated individuals by age group (both doses)')
+    plt.title('Israel - Vaccinated individuals by age group (both doses - 2nd dose offset by -21 days)')
     plt.ylabel('Accumulated - absolute')
     # annotateVaccines(ax, [95, 5])
 
