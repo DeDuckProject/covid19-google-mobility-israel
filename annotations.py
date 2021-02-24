@@ -5,11 +5,14 @@ def annotate(ax, yOffsets):
     ax.axvline(x='2020-12-27', linestyle='dashed', alpha=0.5, color='#6BADEF')
     ax.text(x='2020-12-28', y=yOffsets[0], s='3rd lockdown', alpha=0.7, color='#000000')
 
-    ax.axvline(x='2021-01-08', linestyle='dashed', alpha=0.5, color='#6BADEF')
+    # ax.axvline(x='2021-01-08', linestyle='dashed', alpha=0.5, color='#6BADEF')
     # ax.text(x='2021-01-09', y=yOffsets[0], s='tighten', alpha=0.7, color='#000000')
 
     # ax.axvline(x='2020-09-01', linestyle='dashed', alpha=0.5, color='#6BADEF')
     # ax.text(x='2020-09-02', y=yOffsets[1], s='Schools open', alpha=0.7, color='#000000')
+
+    ax.axvline(x='2021-02-07', linestyle='dashed', alpha=0.5, color='#6BADEF')
+    ax.text(x='2021-02-08', y=yOffsets[0], s='end 3rd lockdown', alpha=0.7, color='#000000')
 
 def annotateEndLockdown2(ax, yOffsets):
     ax.axvline(x='2020-10-18', linestyle='dashed', alpha=0.5, color='#6BADEF')
