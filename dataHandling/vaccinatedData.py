@@ -3,6 +3,7 @@ import datetime as dt
 import os
 
 populationFrom2019 = False
+deductRecovered = False
 
 # IMPORTANT: before running the script make sure you download the dataset and place in /data:
 # https://data.gov.il/dataset/f54e79b2-3e6b-4b65-a857-f93e47997d9c/resource/57410611-936c-49a6-ac3c-838171055b1f/download/vaccinated-per-day-2021-02-23.csv
@@ -34,7 +35,7 @@ else:
     recoveringForAgeThousand = [64, 121, 88, 73, 52, 30, 14, 7]
 
 
-def getPopulationForAgeGroup(age_group, dontIncludeCantvaccinate=True, deductRecovered = False):
+def getPopulationForAgeGroup(age_group, dontIncludeCantvaccinate=True, deductRecovered = deductRecovered):
     if age_group=='0-19' and dontIncludeCantvaccinate:
         inThousands = population16to19
     else:
@@ -44,8 +45,11 @@ def getPopulationForAgeGroup(age_group, dontIncludeCantvaccinate=True, deductRec
 
     return inThousands * 1000
 
-def getTotalPopulation():
-    return sum(popForAgeThousand) * 1000
+def getTotalPopulation(deductRecovered = deductRecovered):
+    total = sum(popForAgeThousand)
+    if deductRecovered:
+        total -= sum(recoveringForAgeThousand)
+    return total * 1000
 
 def getVaccinatedData():
     return [israelVaccinatedData, age_groups]
