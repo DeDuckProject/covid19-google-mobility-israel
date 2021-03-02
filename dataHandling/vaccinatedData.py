@@ -3,11 +3,12 @@ import datetime as dt
 import os
 
 populationFrom2019 = False
+populationLatest2021 = True
 deductRecovered = False
 
 # IMPORTANT: before running the script make sure you download the dataset and place in /data:
-# https://data.gov.il/dataset/f54e79b2-3e6b-4b65-a857-f93e47997d9c/resource/57410611-936c-49a6-ac3c-838171055b1f/download/vaccinated-per-day-2021-02-23.csv
-main_csv_filename = '../data/vaccinated-per-day-2021-02-23.csv'
+# https://data.gov.il/dataset/f54e79b2-3e6b-4b65-a857-f93e47997d9c/resource/57410611-936c-49a6-ac3c-838171055b1f/download/vaccinated-per-day-2021-02-27.csv
+main_csv_filename = '../data/vaccinated-per-day-2021-02-27.csv'
 israelVaccinatedData = pd.read_csv(main_csv_filename)
 israelVaccinatedData = israelVaccinatedData.rename(columns={'VaccinationDate': 'date'})
 
@@ -29,10 +30,15 @@ if populationFrom2019:
     population16to19 = 566.2
     population10to19 = 1488
 else:
-    # Source Weizman institute https://twitter.com/segal_eran/status/1362766210673303552?s=20
     age_groups = ['16-19', '20-29', '30-39', '40-49', '50-59', '60-69', '70-79', '80+']
-    popForAgeThousand = [574, 1278, 1186, 1081, 833, 735, 462, 274]
-    recoveringForAgeThousand = [64, 121, 88, 73, 52, 30, 14, 7]
+    if populationLatest2021:
+        # Source https://twitter.com/MaytalYasur/status/1365227269808136194
+        popForAgeThousand = [591, 1318, 1206, 1111, 875, 749, 531, 308]
+        recoveringForAgeThousand = [68, 125, 92, 75, 53, 31, 14, 7]
+    else:
+        # Source Weizman institute https://twitter.com/segal_eran/status/1362766210673303552?s=20
+        popForAgeThousand = [574, 1278, 1186, 1081, 833, 735, 462, 274]
+        recoveringForAgeThousand = [64, 121, 88, 73, 52, 30, 14, 7]
 
 
 def getPopulationForAgeGroup(age_group, dontIncludeCantvaccinate=True, deductRecovered = deductRecovered):
