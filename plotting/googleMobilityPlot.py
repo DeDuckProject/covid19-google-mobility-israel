@@ -180,8 +180,8 @@ category = allCategories[5]
 [countryDf, subRegions1, subRegions2] = getCountryData('Israel')
 
 # Main plots to run: (should choose one)
-# plotRegularTimeline(countryDf, allCategories, subRegions1, subRegions2, category)
-plot1st2ndLockdownComparison(countryDf, [category])
+plotRegularTimeline(countryDf, allCategories, subRegions1, subRegions2, category)
+# plot1st2ndLockdownComparison(countryDf, [category])
 # plot1st2ndLockdownComparison(countryDf, [category], True)
 
 plt.ylabel('Change in presence')
