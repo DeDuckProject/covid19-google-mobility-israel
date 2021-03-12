@@ -50,6 +50,12 @@ else:
         items=['date', 'town', 'town_code', 'agas_code', 'accumulated_tested', 'accumulated_cases',
                'accumulated_hospitalized'])
 
+# Get vaccinated data:
+# vaccinated_city_table_ver_0012.csv
+# vacc_csv_filename = '../data/vaccinated_city_table_ver_0012.csv'
+# mohVaccByLoc = pd.read_csv(vacc_csv_filename)
+# israelDataCsv.join(on=['date', 'town_code'], other=mohVaccByLoc)
+
 dateFetched = dt.datetime.fromtimestamp(os.path.getmtime(main_csv_filename)).strftime("%d/%m/%y")
 datagov_source_text = 'Israel covid-19 dataset.\nhttps://data.gov.il/dataset/covid-19 Accessed: {}'.format(
     dateFetched)
