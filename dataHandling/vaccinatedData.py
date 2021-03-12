@@ -7,8 +7,8 @@ populationLatest2021 = True
 deductRecovered = False
 
 # IMPORTANT: before running the script make sure you download the dataset and place in /data:
-# https://data.gov.il/dataset/f54e79b2-3e6b-4b65-a857-f93e47997d9c/resource/57410611-936c-49a6-ac3c-838171055b1f/download/vaccinated-per-day-2021-03-06.csv
-main_csv_filename = '../data/vaccinated-per-day-2021-03-06.csv'
+# https://data.gov.il/dataset/f54e79b2-3e6b-4b65-a857-f93e47997d9c/resource/57410611-936c-49a6-ac3c-838171055b1f/download/vaccinated-per-day-2021-03-09.csv
+main_csv_filename = '../data/vaccinated-per-day-2021-03-09.csv'
 israelVaccinatedData = pd.read_csv(main_csv_filename)
 israelVaccinatedData = israelVaccinatedData.rename(columns={'VaccinationDate': 'date'})
 
