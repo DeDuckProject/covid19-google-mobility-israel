@@ -1,4 +1,4 @@
-enableAnnotations = True
+enableAnnotations = False
 
 def annotate(ax, yOffsets):
     if enableAnnotations:
